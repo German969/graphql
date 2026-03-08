@@ -1,9 +1,9 @@
-import { getAllPosts, insertPost } from './db.js';
+import { getAllPosts, getUserByUsername, createUser, insertPost } from './db.js';
 
 /**
  * Resolvers implement the schema: each field gets a function
  * that returns the value. Query and Mutation both use this root object.
- * Posts are stored in SQLite (server/blog.db).
+ * Posts and users are stored in SQLite (server/blog.db).
  */
 export function createRootValue() {
   return {
@@ -16,8 +16,18 @@ export function createRootValue() {
     posts() {
       return getAllPosts();
     },
-    publishPost({ title, body }) {
-      return insertPost(title, body);
+    user({ username }) {
+      return getUserByUsername(username) ?? null;
+    },
+    createUser({ username, displayName }) {
+      return createUser(username, displayName);
+    },
+    publishPost({ title, body, authorUsername }) {
+      const author = getUserByUsername(authorUsername);
+      if (!author) {
+        throw new Error(`User not found: ${authorUsername}. Create the user first with createUser.`);
+      }
+      return insertPost(title, body, Number(author.id));
     },
   };
 }

@@ -4,90 +4,60 @@
 
 In GraphQL, **queries** are for reading data; **mutations** are for changing data (create, update, delete). By convention they’re defined on a root type called `Mutation`.
 
-In our blog API, the mutation **`publishPost`** creates a new post. The name makes it clear what it does: “publish a post,” not a generic “add” or “create.”
+In our blog API we have two mutations: **`createUser`** (create or update a user by username) and **`publishPost`** (create a post linked to an author).
 
 ## Schema: the Mutation type
 
 Our schema defines:
 
 ```graphql
-type Post {
-  id: ID!
-  title: String!
-  body: String!
-  publishedAt: String!
-}
-
-type Query {
-  blogName: String
-  serverTime: String
-  posts: [Post!]!
-}
-
 type Mutation {
-  publishPost(title: String!, body: String!): Post!
+  createUser(username: String!, displayName: String!): User!
+  publishPost(title: String!, body: String!, authorUsername: String!): Post!
 }
 ```
 
-- **`publishPost(title: String!, body: String!)`** – Takes two required arguments: `title` and `body`. Both are non-null strings.
-- **`: Post!`** – The mutation returns a single post (the one just created), so the client can show it without refetching the full list.
+- **`createUser(username, displayName)`** – Creates a user, or updates the display name if the username already exists. Returns the **`User`**.
+- **`publishPost(title, body, authorUsername)`** – Creates a post. **`authorUsername`** links the post to a user (that user must exist; create them first with `createUser`). Returns the created **`Post`** (including `author`).
 
 ## Resolvers for Mutation
 
-Mutations are resolved like queries: the resolver lives on the same root value object. The first argument to a resolver is the **arguments** object (the ones defined in the schema). We persist posts in SQLite via `server/db.js`:
+Mutations are resolved like queries: the resolver lives on the same root value object. We persist in SQLite via `server/db.js`:
 
 ```js
-import { insertPost } from './db.js';
-
-publishPost({ title, body }) {
-  return insertPost(title, body);
+createUser({ username, displayName }) {
+  return createUser(username, displayName);  // from db.js
+}
+publishPost({ title, body, authorUsername }) {
+  const author = getUserByUsername(authorUsername);
+  if (!author) throw new Error('User not found. Create the user first.');
+  return insertPost(title, body, Number(author.id));
 }
 ```
 
-So when the client sends `publishPost(title: "My title", body: "My body")`, GraphQL calls this with `{ title, body }`, and we insert a row and return the created post. Data survives server restarts because it’s stored in `server/blog.db`.
+So when the client sends `publishPost(..., authorUsername: "alice")`, we look up the user and set the post’s `author_id` in the database.
 
-## Calling a mutation from the client
+## Calling mutations from the client
 
-In the client we send a **mutation** operation and pass **variables** so the query string stays static:
+We send a **mutation** and pass **variables**. Example: publish a post as the current user.
 
 ```graphql
-mutation PublishPost($title: String!, $body: String!) {
-  publishPost(title: $title, body: $body) {
+mutation PublishPost($title: String!, $body: String!, $authorUsername: String!) {
+  publishPost(title: $title, body: $body, authorUsername: $authorUsername) {
     id
     title
     body
     publishedAt
+    author { id username displayName }
   }
 }
 ```
 
-We ask for the created post’s fields so we can add it to the UI without refetching. In the request body we pass:
-
-```json
-{
-  "query": "mutation PublishPost($title: String!, $body: String!) { ... }",
-  "variables": { "title": "First post", "body": "Hello, world!" }
-}
-```
-
-Our `graphql()` helper accepts `(query, variables)`, so we call:
-
-```js
-await graphql(
-  `mutation PublishPost($title: String!, $body: String!) {
-    publishPost(title: $title, body: $body) { id title body publishedAt }
-  }`,
-  { title: title.trim(), body: body.trim() }
-);
-```
+The frontend remembers the “current user” (username + display name) in state and `localStorage`, and sends `authorUsername` when publishing. No authentication—just a chosen identity for posting.
 
 ## Naming the operation
 
-`PublishPost` is an **operation name**. It’s optional but useful for logging and debugging. Syntax:
-
-```graphql
-mutation PublishPost($title: String!, $body: String!) { ... }
-```
+`PublishPost` and `CreateUser` are **operation names**. Optional but useful for logging and debugging.
 
 ## Takeaways
 

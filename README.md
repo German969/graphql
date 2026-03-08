@@ -2,7 +2,7 @@
 
 A step-by-step GraphQL project with **Node (Express)** and **React**. Each lesson adds one concept and is documented in `lessons/`.
 
-We use a **blog** example so names are clear and real-world: **`blogName`**, **`serverTime`**, **`posts`** (list of **`Post`** with `id`, `title`, `body`, `publishedAt`), and a **`publishPost`** mutation to create posts.
+We use a **blog** example so names are clear and real-world: **`User`** (username, displayName), **`Post`** (with optional **`author`**), **`blogName`**, **`serverTime`**, **`posts`**, **`createUser`**, and **`publishPost(title, body, authorUsername)`**. The frontend remembers the current user (no auth) so you can switch who is posting.
 
 ## Setup
 
@@ -16,7 +16,7 @@ npm run dev
 
 - API: **http://localhost:4000/graphql**
 - GraphiQL (playground): open that URL in the browser
-- **Database:** SQLite. Posts are stored in `server/blog.db` (created on first run). The file is ignored by git (see `.gitignore`).
+- **Database:** SQLite. `server/blog.db` holds `users` and `posts` (posts can have an author). Created on first run; ignored by git (see `.gitignore`).
 
 ### Frontend (React)
 
@@ -36,6 +36,7 @@ npm run dev
 | 2 | First query from React | [02-first-client-query.md](lessons/02-first-client-query.md) |
 | 3 | Mutations | [03-mutations.md](lessons/03-mutations.md) |
 | 4 | Variables and fragments | [04-variables-and-fragments.md](lessons/04-variables-and-fragments.md) |
+| 5 | Multiple types and relations | [05-types-and-relations.md](lessons/05-types-and-relations.md) |
 
 Run the server before the client when doing the lessons.
 

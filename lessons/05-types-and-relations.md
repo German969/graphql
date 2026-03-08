@@ -1,0 +1,84 @@
+# Lesson 5: Multiple Types and Relations
+
+## Goal
+
+See how GraphQL schemas organize **multiple types** and **relations** between them (e.g. `Post` has an **`author`** of type `User`). The same ideas apply to any API with related entities.
+
+## Organizing the schema: types first, then entry points
+
+In **`server/schema.graphql`** we define:
+
+1. **Types** – The shapes of our data: **`User`** and **`Post`**.
+2. **Relations** – A field on one type that returns another type. Here: **`Post.author`** is of type **`User`** (or `null`).
+3. **Query** – Root type for reads: which types are reachable from the root (e.g. `posts`, `user(username)`).
+4. **Mutation** – Root type for writes: **`createUser`**, **`publishPost`**.
+
+Order in the file doesn’t change behavior, but listing types first and then `Query`/`Mutation` keeps the schema readable.
+
+## User and Post
+
+```graphql
+type User {
+  id: ID!
+  username: String!
+  displayName: String!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  body: String!
+  publishedAt: String!
+  author: User
+}
+```
+
+- **`User`** – A single entity: id, username, display name.
+- **`Post`** – Has its own fields plus **`author: User`**. So each post can have an author (or `null` for legacy posts). That’s a **relation**: one post → one user.
+
+The schema doesn’t say *how* the server gets the author; it only says “a post can have an author of type User.” The resolvers (and the DB) do the join.
+
+## Query and Mutation entry points
+
+```graphql
+type Query {
+  blogName: String
+  serverTime: String
+  posts: [Post!]!
+  user(username: String!): User
+}
+
+type Mutation {
+  createUser(username: String!, displayName: String!): User!
+  publishPost(title: String!, body: String!, authorUsername: String!): Post!
+}
+```
+
+- **`posts`** – Returns a list of **`Post`**; each post can include **`author`** if the client asks for it.
+- **`user(username)`** – Returns one **`User`** by username (or null). Useful to look up a user or check they exist before publishing.
+- **`createUser`** – Creates or updates a user; returns **`User`**.
+- **`publishPost(..., authorUsername)`** – Creates a **`Post`** and links it to the **`User`** with that username.
+
+So we have two **models** (User, Post) and one **relation** (Post → author → User). The client can ask for posts and include `author { username displayName }` in the same query.
+
+## How the client uses it
+
+- **Current user** – The frontend stores “current user” (username + display name) in state and `localStorage`. No login: you just type a username and display name and click “Set as current user” (which calls **`createUser`**).
+- **Publishing** – When you publish a post, the client sends **`authorUsername`** (the current user’s username). The server looks up that user and sets **`author_id`** on the new post.
+- **Listing posts** – The query asks for **`posts { ... author { displayName } }`** so each post shows “by **Display Name**” in the UI.
+
+## Database and resolvers
+
+- **DB** – **`users`** table (id, username, display_name). **`posts`** table has **`author_id`** referencing **`users(id)`**. Old posts can have **`author_id`** null.
+- **Resolvers** – **`posts`** returns rows from a query that **joins** posts and users so each post has an **`author`** object (or null). **`publishPost`** receives **`authorUsername`**, finds the user, then inserts a post with that **`author_id`**.
+
+## Takeaways
+
+| Concept | Role |
+|--------|------|
+| **Multiple types** | Define each entity (User, Post) as its own type in the schema. |
+| **Relations** | A field on a type can return another type (e.g. **`Post.author`** → **`User`**). |
+| **Entry points** | **Query** and **Mutation** define what the client can call; they return your types. |
+| **Naming** | Use clear, domain names: **`authorUsername`**, **`createUser`**, **`displayName`** so the schema stays easy to read. |
+
+Next steps could be: **arguments on Query** (e.g. **`post(id: ID!)`**), **pagination** for **`posts`**, or **validation and errors** (Lesson 6).

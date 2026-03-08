@@ -15,39 +15,51 @@ We use a **blog** domain so names are clear and real-world:
 
 - **`blogName`** – Name of the blog (e.g. for the header).
 - **`serverTime`** – Current time on the server (useful for “last updated”).
-- **`posts`** – List of blog posts.
-- **`publishPost`** – Mutation to create a new post.
+- **`posts`** – List of blog posts (each can have an **`author`**).
+- **`user(username)`** – Look up a user by username.
+- **`createUser`** – Mutation to create or update a user (username + display name).
+- **`publishPost`** – Mutation to create a post (you pass **`authorUsername`** so the post is linked to a user).
 
-Each **post** has: `id`, `title`, `body`, `publishedAt`.
+Each **post** has: `id`, `title`, `body`, `publishedAt`, and optionally **`author`** (a **`User`**). Each **user** has: `id`, `username`, `displayName`.
 
 ## Our first schema
 
 The schema lives in **`server/schema.graphql`** as a `.graphql` file (Schema Definition Language, SDL). The server loads it in `server/schema.js` so there’s a single source of truth:
 
 ```graphql
+type User {
+  id: ID!
+  username: String!
+  displayName: String!
+}
+
 type Post {
   id: ID!
   title: String!
   body: String!
   publishedAt: String!
+  author: User
 }
 
 type Query {
   blogName: String
   serverTime: String
   posts: [Post!]!
+  user(username: String!): User
 }
 
 type Mutation {
-  publishPost(title: String!, body: String!): Post!
+  createUser(username: String!, displayName: String!): User!
+  publishPost(title: String!, body: String!, authorUsername: String!): Post!
 }
 ```
 
 - **`Query`** is the root type for *read* operations. Every GraphQL API has a `Query` type (and optionally `Mutation`, `Subscription`).
-- **`blogName`**, **`serverTime`**, and **`posts`** are fields on `Query`. **`Mutation`** is the root type for *write* operations (we use it in Lesson 3).
-- **`Post`** is a custom type: each post has an `id`, `title`, `body`, and `publishedAt`. The `!` means “non-null”; `[Post!]!` means “non-null list of non-null posts”.
+- **`User`** and **`Post`** are custom types. **`Post.author`** is a *relation*: it’s of type `User` (or null for old posts). That’s how you model “each post has an optional author” in the schema.
+- **`blogName`**, **`serverTime`**, **`posts`**, and **`user(username)`** are fields on `Query`. **`Mutation`** is the root type for *write* operations (Lesson 3).
+- The `!` means “non-null”; `[Post!]!` means “non-null list of non-null posts”. No `!` on **`author`** means it can be null.
 
-So we’re saying: “Clients can ask for blog info and a list of posts, and publish new posts that look like `Post`.”
+So we’re saying: “Clients can ask for blog info, posts (with author), and a user by username; and they can create users and publish posts linked to an author.”
 
 ## Schema file and the GraphQL extension
 
@@ -65,9 +77,9 @@ So when a client asks for `blogName`, GraphQL calls `rootValue.blogName()` and r
 
 ## Where the data lives: SQLite
 
-Posts are persisted in a **SQLite** database so they survive server restarts. The file `server/blog.db` is created on first run. In code:
+Posts and users are persisted in a **SQLite** database so they survive server restarts. The file `server/blog.db` is created on first run. In code:
 
-- **`server/db.js`** – Opens the database, creates the `posts` table if needed, and exports `getAllPosts()` and `insertPost(title, body)`. Resolvers call these instead of using in-memory arrays.
+- **`server/db.js`** – Opens the database, creates **`users`** and **`posts`** tables (posts have an optional `author_id`), and exports `createUser`, `getUserByUsername`, `getAllPosts()` (with author joined), and `insertPost(title, body, authorId)`. Resolvers call these instead of using in-memory state.
 - **`server/blog.db`** – The SQLite file (ignored by git via `.gitignore`).
 
 ## Running a query
@@ -115,6 +127,6 @@ You’ll get something like:
 | **Custom types** | e.g. `Post` – shape the data your API returns. |
 | **GraphiQL** | Built-in UI to run queries against `/graphql`. |
 | **`.graphqlrc.yml`** | Config for the GraphQL extension: schema + documents for validation and autocomplete. |
-| **SQLite / `server/db.js`** | Posts are stored in `server/blog.db`; resolvers use `getAllPosts()` and `insertPost()`. |
+| **SQLite / `server/db.js`** | **`users`** and **`posts`** (with **`author_id`**) in `server/blog.db`; resolvers use `createUser`, `getUserByUsername`, `getAllPosts()`, `insertPost()`. |
 
 Next: **Lesson 2** – Add a React app and run this same query from the client.
