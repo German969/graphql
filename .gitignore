@@ -1,6 +1,10 @@
 # Dependencies
 node_modules
 
+# SQLite database (local data)
+server/blog.db
+*.db
+
 # Build / env
 dist
 dist-ssr

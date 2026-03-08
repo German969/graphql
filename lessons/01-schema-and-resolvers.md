@@ -63,6 +63,13 @@ In `server/resolvers.js` we provide the logic:
 
 So when a client asks for `blogName`, GraphQL calls `rootValue.blogName()` and returns the result. When they call `publishPost(title: "Hi", body: "...")`, GraphQL calls `rootValue.publishPost({ title, body })`.
 
+## Where the data lives: SQLite
+
+Posts are persisted in a **SQLite** database so they survive server restarts. The file `server/blog.db` is created on first run. In code:
+
+- **`server/db.js`** – Opens the database, creates the `posts` table if needed, and exports `getAllPosts()` and `insertPost(title, body)`. Resolvers call these instead of using in-memory arrays.
+- **`server/blog.db`** – The SQLite file (ignored by git via `.gitignore`).
+
 ## Running a query
 
 Start the server:
@@ -108,5 +115,6 @@ You’ll get something like:
 | **Custom types** | e.g. `Post` – shape the data your API returns. |
 | **GraphiQL** | Built-in UI to run queries against `/graphql`. |
 | **`.graphqlrc.yml`** | Config for the GraphQL extension: schema + documents for validation and autocomplete. |
+| **SQLite / `server/db.js`** | Posts are stored in `server/blog.db`; resolvers use `getAllPosts()` and `insertPost()`. |
 
 Next: **Lesson 2** – Add a React app and run this same query from the client.

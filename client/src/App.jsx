@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react'
 import { graphql } from './graphql'
 import './App.css'
 
+function formatDateTime(isoString) {
+  if (!isoString) return ''
+  const date = new Date(isoString)
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date)
+}
+
 function App() {
   const [data, setData] = useState(null)
   const [posts, setPosts] = useState([])
@@ -61,23 +70,34 @@ function App() {
   return (
     <div className="app">
       <h1>{data.blogName}</h1>
-      <p><strong>Server time:</strong> {data.serverTime}</p>
+      <p><strong>Server time:</strong> {formatDateTime(data.serverTime)}</p>
 
-      <section>
+      <section className="publish-section">
         <h2>Publish a post</h2>
-        <form onSubmit={handlePublishPost}>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Post title"
-          />
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Post body"
-            rows={3}
-          />
-          <button type="submit">Publish</button>
+        <form onSubmit={handlePublishPost} className="publish-form">
+          <div className="form-field">
+            <label htmlFor="post-title">Title</label>
+            <input
+              id="post-title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Post title"
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="post-body">Body</label>
+            <textarea
+              id="post-body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Post body"
+              rows={4}
+            />
+          </div>
+          <div className="form-actions">
+            <button type="submit">Publish</button>
+          </div>
         </form>
       </section>
 
@@ -88,7 +108,7 @@ function App() {
             <li key={post.id}>
               <strong>{post.title}</strong>
               <p>{post.body}</p>
-              <small>{post.publishedAt}</small>
+              <small>{formatDateTime(post.publishedAt)}</small>
             </li>
           ))}
         </ul>

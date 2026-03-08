@@ -1,9 +1,9 @@
-let nextPostId = 1;
-const posts = [];
+import { getAllPosts, insertPost } from './db.js';
 
 /**
  * Resolvers implement the schema: each field gets a function
  * that returns the value. Query and Mutation both use this root object.
+ * Posts are stored in SQLite (server/blog.db).
  */
 export function createRootValue() {
   return {
@@ -14,17 +14,10 @@ export function createRootValue() {
       return new Date().toISOString();
     },
     posts() {
-      return [...posts];
+      return getAllPosts();
     },
     publishPost({ title, body }) {
-      const post = {
-        id: String(nextPostId++),
-        title,
-        body,
-        publishedAt: new Date().toISOString(),
-      };
-      posts.push(post);
-      return post;
+      return insertPost(title, body);
     },
   };
 }

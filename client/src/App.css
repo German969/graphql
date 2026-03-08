@@ -2,7 +2,118 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
-  text-align: center;
+  text-align: left;
+}
+
+.app {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.app h1 {
+  margin-bottom: 0.5rem;
+}
+
+.app section {
+  margin-top: 2rem;
+}
+
+.app section h2 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+/* Publish form: stacked, aligned fields */
+.publish-section {
+  padding: 1.5rem;
+  background: var(--card-bg, #1a1a1a);
+  border-radius: 8px;
+}
+
+.publish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 28rem;
+}
+
+.publish-form .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.publish-form label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--label-color, #c0c0c0);
+}
+
+.publish-form input,
+.publish-form textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 6px;
+  background: var(--input-bg, #0f0f0f);
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.publish-form textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.publish-form .form-actions {
+  margin-top: 0.25rem;
+}
+
+.publish-form button {
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent, #646cff);
+  color: #fff;
+  cursor: pointer;
+}
+
+.publish-form button:hover {
+  background: var(--accent-hover, #535bf2);
+}
+
+/* Posts list */
+.app ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.app ul li {
+  padding: 1rem;
+  margin-top: 0.75rem;
+  background: var(--card-bg, #1a1a1a);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent, #646cff);
+}
+
+.app ul li strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.app ul li p {
+  margin: 0 0 0.5rem;
+  white-space: pre-wrap;
+}
+
+.app ul li small {
+  font-size: 0.8rem;
+  color: #888;
 }
 
 .logo {

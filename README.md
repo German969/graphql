@@ -16,6 +16,7 @@ npm run dev
 
 - API: **http://localhost:4000/graphql**
 - GraphiQL (playground): open that URL in the browser
+- **Database:** SQLite. Posts are stored in `server/blog.db` (created on first run). The file is ignored by git (see `.gitignore`).
 
 ### Frontend (React)
 

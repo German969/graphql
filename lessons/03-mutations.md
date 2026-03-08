@@ -34,22 +34,17 @@ type Mutation {
 
 ## Resolvers for Mutation
 
-Mutations are resolved like queries: the resolver lives on the same root value object. The first argument to a resolver is the **arguments** object (the ones defined in the schema):
+Mutations are resolved like queries: the resolver lives on the same root value object. The first argument to a resolver is the **arguments** object (the ones defined in the schema). We persist posts in SQLite via `server/db.js`:
 
 ```js
+import { insertPost } from './db.js';
+
 publishPost({ title, body }) {
-  const post = {
-    id: String(nextPostId++),
-    title,
-    body,
-    publishedAt: new Date().toISOString(),
-  };
-  posts.push(post);
-  return post;
+  return insertPost(title, body);
 }
 ```
 
-So when the client sends `publishPost(title: "My title", body: "My body")`, GraphQL calls this with `{ title: "My title", body: "My body" }`.
+So when the client sends `publishPost(title: "My title", body: "My body")`, GraphQL calls this with `{ title, body }`, and we insert a row and return the created post. Data survives server restarts because it’s stored in `server/blog.db`.
 
 ## Calling a mutation from the client
 
