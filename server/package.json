@@ -5,10 +5,12 @@
   "type": "module",
   "main": "index.js",
   "dependencies": {
+    "@apollo/server": "^4.11.0",
+    "@as-integrations/express4": "^1.1.0",
     "better-sqlite3": "^11.6.0",
+    "cors": "^2.8.5",
     "express": "^4.21.0",
-    "express-graphql": "^0.12.0",
-    "graphql": "^15.9.0"
+    "graphql": "^16.9.0"
   },
   "scripts": {
     "start": "node index.js",

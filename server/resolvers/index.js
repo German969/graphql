@@ -3,9 +3,22 @@ import { userResolvers } from './user.js';
 import { postResolvers } from './post.js';
 
 /**
- * Combines resolvers by domain (blog, user, post) into a single root value.
- * Keeps Query and Mutation organized as the app grows.
+ * Apollo Server expects resolvers by type (Query, Mutation).
+ * We map our flat domain resolvers into that shape.
  */
+export const resolvers = {
+  Query: {
+    ...blogResolvers,
+    user: userResolvers.user,
+    posts: postResolvers.posts,
+  },
+  Mutation: {
+    createUser: userResolvers.createUser,
+    publishPost: postResolvers.publishPost,
+  },
+};
+
+/** @deprecated Used only with express-graphql; Apollo uses `resolvers` above. */
 export function createRootValue() {
   return {
     ...blogResolvers,

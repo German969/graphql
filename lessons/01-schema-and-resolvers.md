@@ -75,7 +75,7 @@ Start the server:
 cd server && npm install && npm run dev
 ```
 
-Open **http://localhost:4000/graphql** (GraphiQL). Try:
+Open **http://localhost:4000/graphql** in a GraphQL client (e.g. Apollo Sandbox, or send a POST with the query). Try:
 
 ```graphql
 query {
@@ -110,7 +110,7 @@ You’ll get something like:
 | **Resolvers** | Implement each field (the “how”). Split in `server/resolvers/*.js` (blog, user, post, index). |
 | **Query** | Root type for read-only operations. |
 | **Custom types** | e.g. `Post` – shape the data your API returns. |
-| **GraphiQL** | Built-in UI to run queries against `/graphql`. |
+| **/graphql** | API endpoint; use any GraphQL client or POST request to run queries (Lesson 7 uses Apollo Server). |
 | **`.graphqlrc.yml`** | Config for the GraphQL extension: schema + documents for validation and autocomplete. |
 | **SQLite / `server/db.js`** | **`users`** and **`posts`** (with **`author_id`**) in `server/blog.db`; resolver modules in `server/resolvers/` call the db helpers. |
 

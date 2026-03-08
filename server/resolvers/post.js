@@ -7,7 +7,7 @@ export const postResolvers = {
   posts() {
     return getAllPosts();
   },
-  publishPost({ title, body, authorUsername }) {
+  publishPost(_, { title, body, authorUsername }) {
     const author = getUserByUsername(authorUsername);
     if (!author) {
       throw new Error(`User not found: ${authorUsername}. Create the user first with createUser.`);

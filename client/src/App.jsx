@@ -1,9 +1,52 @@
-import { useState, useEffect } from 'react'
-import { getFeed, publishPost } from './services/posts'
-import { createUser } from './services/users'
+import { useState } from 'react'
+import { gql, useQuery, useMutation } from '@apollo/client'
 import './App.css'
 
 const CURRENT_USER_KEY = 'blog-current-user'
+
+const BLOG_QUERY = gql`
+  query BlogQuery {
+    blogName
+    serverTime
+    posts {
+      id
+      title
+      body
+      publishedAt
+      author {
+        id
+        username
+        displayName
+      }
+    }
+  }
+`
+
+const CREATE_USER_MUTATION = gql`
+  mutation CreateUser($username: String!, $displayName: String!) {
+    createUser(username: $username, displayName: $displayName) {
+      id
+      username
+      displayName
+    }
+  }
+`
+
+const PUBLISH_POST_MUTATION = gql`
+  mutation PublishPost($title: String!, $body: String!, $authorUsername: String!) {
+    publishPost(title: $title, body: $body, authorUsername: $authorUsername) {
+      id
+      title
+      body
+      publishedAt
+      author {
+        id
+        username
+        displayName
+      }
+    }
+  }
+`
 
 function loadCurrentUser() {
   try {
@@ -31,40 +74,38 @@ function formatDateTime(isoString) {
 }
 
 function App() {
-  const [data, setData] = useState(null)
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { data, loading, error: queryError } = useQuery(BLOG_QUERY)
+  const [createUserMutation] = useMutation(CREATE_USER_MUTATION)
+  const [publishPostMutation, { error: publishError }] = useMutation(PUBLISH_POST_MUTATION, {
+    refetchQueries: [{ query: BLOG_QUERY }],
+  })
+
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [currentUser, setCurrentUserState] = useState(loadCurrentUser)
   const [showUserForm, setShowUserForm] = useState(() => !loadCurrentUser())
   const [usernameInput, setUsernameInput] = useState('')
   const [displayNameInput, setDisplayNameInput] = useState('')
+  const [mutationError, setMutationError] = useState(null)
 
-  useEffect(() => {
-    getFeed()
-      .then((d) => {
-        setData(d)
-        setPosts(d.posts || [])
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
+  const error = queryError?.message ?? publishError?.message ?? mutationError
+  const posts = data?.posts ?? []
 
   function handleSetCurrentUser(e) {
     e.preventDefault()
     const username = usernameInput.trim()
     const displayName = displayNameInput.trim()
     if (!username || !displayName) return
-    createUser(username, displayName)
-      .then((user) => {
+    setMutationError(null)
+    createUserMutation({ variables: { username, displayName } })
+      .then(({ data: res }) => {
+        const user = res.createUser
         const u = { username: user.username, displayName: user.displayName }
         setCurrentUserState(u)
         saveCurrentUser(u)
         setShowUserForm(false)
       })
-      .catch((e) => setError(e.message))
+      .catch((e) => setMutationError(e.message))
   }
 
   function handleRemoveUser() {
@@ -85,26 +126,27 @@ function App() {
     e.preventDefault()
     if (!title.trim() || !body.trim()) return
     if (!currentUser) {
-      setError('Set a current user (username + display name) before publishing.')
+      setMutationError('Set a current user (username + display name) before publishing.')
       return
     }
+    setMutationError(null)
     try {
-      const newPost = await publishPost(
-        title.trim(),
-        body.trim(),
-        currentUser.username
-      )
-      setPosts((prev) => [newPost, ...prev])
+      await publishPostMutation({
+        variables: {
+          title: title.trim(),
+          body: body.trim(),
+          authorUsername: currentUser.username,
+        },
+      })
       setTitle('')
       setBody('')
-      setError(null)
     } catch (err) {
-      setError(err.message)
+      setMutationError(err.message)
     }
   }
 
   if (loading) return <p>Loading…</p>
-  if (error && !data) return <p>Error: {error}</p>
+  if (queryError && !data) return <p>Error: {queryError.message}</p>
   if (!data) return null
 
   return (

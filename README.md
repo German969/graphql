@@ -14,8 +14,8 @@ npm install
 npm run dev
 ```
 
-- API: **http://localhost:4000/graphql**
-- GraphiQL (playground): open that URL in the browser
+- API: **http://localhost:4000/graphql** (served by **Apollo Server**; see Lesson 7).
+- You can send POST requests or use a GraphQL client (e.g. Apollo Sandbox) to explore the API.
 - **Database:** SQLite. `server/blog.db` holds `users` and `posts` (posts can have an author). Created on first run; ignored by git (see `.gitignore`).
 - **Schema** is split in `server/schema/` (base, user, post); **resolvers** in `server/resolvers/` (blog, user, post) so user and post logic stay separate.
 
@@ -27,7 +27,7 @@ npm install
 npm run dev
 ```
 
-- App: **http://localhost:5173** (or the port Vite prints)
+- App: **http://localhost:5173** (or the port Vite prints). The client uses **Apollo Client** (Lesson 6): **useQuery** for the feed and **useMutation** for createUser / publishPost.
 
 ## Lessons
 
@@ -38,6 +38,8 @@ npm run dev
 | 3 | Mutations | [03-mutations.md](lessons/03-mutations.md) |
 | 4 | Variables and fragments | [04-variables-and-fragments.md](lessons/04-variables-and-fragments.md) |
 | 5 | Multiple types and relations | [05-types-and-relations.md](lessons/05-types-and-relations.md) |
+| 6 | Apollo Client | [06-apollo-client.md](lessons/06-apollo-client.md) |
+| 7 | Apollo Server | [07-apollo-server.md](lessons/07-apollo-server.md) |
 
 Run the server before the client when doing the lessons.
 
