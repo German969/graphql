@@ -1,0 +1,15 @@
+# User type and user-related query + mutation.
+
+type User {
+  id: ID!
+  username: String!
+  displayName: String!
+}
+
+extend type Query {
+  user(username: String!): User
+}
+
+type Mutation {
+  createUser(username: String!, displayName: String!): User!
+}

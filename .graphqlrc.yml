@@ -2,5 +2,5 @@
 # validation, and autocomplete in operations (client).
 # https://the-guild.dev/graphql/config/docs
 
-schema: server/schema.graphql
+schema: server/schema/*.graphql
 documents: client/src/**/*.{js,jsx,ts,tsx}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { graphql } from './graphql'
+import { getFeed, publishPost } from './services/posts'
+import { createUser } from './services/users'
 import './App.css'
 
 const CURRENT_USER_KEY = 'blog-current-user'
@@ -42,23 +43,7 @@ function App() {
   const [displayNameInput, setDisplayNameInput] = useState('')
 
   useEffect(() => {
-    graphql(`
-      query BlogQuery {
-        blogName
-        serverTime
-        posts {
-          id
-          title
-          body
-          publishedAt
-          author {
-            id
-            username
-            displayName
-          }
-        }
-      }
-    `)
+    getFeed()
       .then((d) => {
         setData(d)
         setPosts(d.posts || [])
@@ -72,17 +57,8 @@ function App() {
     const username = usernameInput.trim()
     const displayName = displayNameInput.trim()
     if (!username || !displayName) return
-    graphql(
-      `mutation CreateUser($username: String!, $displayName: String!) {
-        createUser(username: $username, displayName: $displayName) {
-          id
-          username
-          displayName
-        }
-      }`,
-      { username, displayName }
-    )
-      .then(({ createUser: user }) => {
+    createUser(username, displayName)
+      .then((user) => {
         const u = { username: user.username, displayName: user.displayName }
         setCurrentUserState(u)
         saveCurrentUser(u)
@@ -113,23 +89,12 @@ function App() {
       return
     }
     try {
-      const result = await graphql(
-        `mutation PublishPost($title: String!, $body: String!, $authorUsername: String!) {
-          publishPost(title: $title, body: $body, authorUsername: $authorUsername) {
-            id
-            title
-            body
-            publishedAt
-            author {
-              id
-              username
-              displayName
-            }
-          }
-        }`,
-        { title: title.trim(), body: body.trim(), authorUsername: currentUser.username }
+      const newPost = await publishPost(
+        title.trim(),
+        body.trim(),
+        currentUser.username
       )
-      setPosts((prev) => [result.publishPost, ...prev])
+      setPosts((prev) => [newPost, ...prev])
       setTitle('')
       setBody('')
       setError(null)

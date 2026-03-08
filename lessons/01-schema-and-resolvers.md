@@ -61,19 +61,26 @@ type Mutation {
 
 So we’re saying: “Clients can ask for blog info, posts (with author), and a user by username; and they can create users and publish posts linked to an author.”
 
-## Schema file and the GraphQL extension
+## Schema and resolvers: organized by domain
 
-- **`server/schema.graphql`** – Edit the schema here. `server/schema.js` reads this file and passes it to `buildSchema()`.
-- **`.graphqlrc.yml`** – Tells the GraphQL editor extension where the schema and operation documents live. With this, you get validation and autocomplete for queries/mutations in `client/src` (e.g. in your React components). Reload the editor window if the extension doesn’t pick it up.
+Schema and resolvers are split by area so they stay easy to find as the app grows.
 
-## Resolvers (root value)
+**Schema** (`server/schema/`):
 
-In `server/resolvers.js` we provide the logic:
+- **`base.graphql`** – Root `Query` (blogName, serverTime).
+- **`user.graphql`** – `User` type, `Query.user`, `Mutation.createUser`.
+- **`post.graphql`** – `Post` type, `Query.posts`, `Mutation.publishPost`.
 
-- For the **root** `Query` and `Mutation` types, we pass a **root value** object whose keys match the field names.
-- Each value is a function that returns the field’s value. For mutations, the function receives the **arguments** (e.g. `title`, `body`) as the first parameter.
+`server/schema.js` reads these files, concatenates them, and passes the result to `buildSchema()`. **`.graphqlrc.yml`** points the GraphQL extension at `server/schema/*.graphql` for validation and autocomplete in `client/src`.
 
-So when a client asks for `blogName`, GraphQL calls `rootValue.blogName()` and returns the result. When they call `publishPost(title: "Hi", body: "...")`, GraphQL calls `rootValue.publishPost({ title, body })`.
+**Resolvers** (`server/resolvers/`):
+
+- **`blog.js`** – `blogName`, `serverTime`.
+- **`user.js`** – `user`, `createUser`.
+- **`post.js`** – `posts`, `publishPost`.
+- **`index.js`** – Merges them into one root value with `createRootValue()`.
+
+User-related and post-related fields live in separate schema and resolver files; the server still exposes one schema and one root value.
 
 ## Where the data lives: SQLite
 
@@ -121,12 +128,12 @@ You’ll get something like:
 
 | Concept    | Role |
 |-----------|------|
-| **Schema** | Defines types and what can be queried (the “what”). Lives in `server/schema.graphql`. |
-| **Resolvers** | Implement each field (the “how”). In `server/resolvers.js`. |
+| **Schema** | Defines types and what can be queried (the “what”). Split in `server/schema/*.graphql` (base, user, post). |
+| **Resolvers** | Implement each field (the “how”). Split in `server/resolvers/*.js` (blog, user, post, index). |
 | **Query** | Root type for read-only operations. |
 | **Custom types** | e.g. `Post` – shape the data your API returns. |
 | **GraphiQL** | Built-in UI to run queries against `/graphql`. |
 | **`.graphqlrc.yml`** | Config for the GraphQL extension: schema + documents for validation and autocomplete. |
-| **SQLite / `server/db.js`** | **`users`** and **`posts`** (with **`author_id`**) in `server/blog.db`; resolvers use `createUser`, `getUserByUsername`, `getAllPosts()`, `insertPost()`. |
+| **SQLite / `server/db.js`** | **`users`** and **`posts`** (with **`author_id`**) in `server/blog.db`; resolver modules in `server/resolvers/` call the db helpers. |
 
 Next: **Lesson 2** – Add a React app and run this same query from the client.

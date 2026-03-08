@@ -55,24 +55,18 @@ A small helper that:
 
 So from React you only deal with the resolved `data`.
 
-### 3. App component
+### 3. Services (`client/src/services/`)
 
-The app runs one query on mount: it asks for `blogName`, `serverTime`, and `posts` (with each post’s `id`, `title`, `body`, `publishedAt`):
+GraphQL queries and mutations live in **service modules** so components stay free of query strings:
 
-```graphql
-query BlogQuery {
-  blogName
-  serverTime
-  posts {
-    id
-    title
-    body
-    publishedAt
-  }
-}
-```
+- **`posts.js`** – `getFeed()` (blogName, serverTime, posts) and `publishPost(title, body, authorUsername)`.
+- **`users.js`** – `createUser(username, displayName)`.
 
-It stores the result in state and shows the blog name, server time, and list of posts. Same query you can run in GraphiQL—now from the browser via React.
+Each service uses the shared `graphql()` helper from `graphql.js`. The GraphQL extension still sees the operations because `documents` in `.graphqlrc.yml` includes `client/src/**/*.{js,jsx,ts,tsx}`.
+
+### 4. App component
+
+The app calls `getFeed()` on mount and uses `createUser()` and `publishPost()` from the services. It stores the result in state and shows the blog name, server time, and list of posts—no GraphQL strings in the JSX.
 
 ## How to run
 
@@ -87,5 +81,6 @@ It stores the result in state and shows the blog name, server time, and list of 
 | **HTTP** | GraphQL is typically one POST per request; body = `query` (+ optional `variables`). |
 | **Response** | Always JSON with `data` (and optionally `errors`). |
 | **Client** | Any HTTP client works; we used `fetch` and a thin wrapper. |
+| **Services** | `services/posts.js` and `services/users.js` hold queries and mutations; components call service functions. |
 
 Next: **Lesson 3** – Add mutations so the client can publish new posts.

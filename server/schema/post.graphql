@@ -1,0 +1,17 @@
+# Post type and post-related query + mutation.
+
+type Post {
+  id: ID!
+  title: String!
+  body: String!
+  publishedAt: String!
+  author: User
+}
+
+extend type Query {
+  posts: [Post!]!
+}
+
+extend type Mutation {
+  publishPost(title: String!, body: String!, authorUsername: String!): Post!
+}

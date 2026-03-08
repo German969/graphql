@@ -4,10 +4,15 @@ import { fileURLToPath } from 'url';
 import { buildSchema } from 'graphql';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const schemaPath = join(__dirname, 'schema.graphql');
+const schemaDir = join(__dirname, 'schema');
+
+const schemaFiles = ['base.graphql', 'user.graphql', 'post.graphql'];
+const schemaString = schemaFiles
+  .map((file) => readFileSync(join(schemaDir, file), 'utf-8'))
+  .join('\n');
 
 /**
- * Schema is the contract: what clients can ask for.
- * Loaded from schema.graphql so the GraphQL extension can use the same file.
+ * Schema is built from separate files per domain (base, user, post).
+ * Each file can define types and extend Query / Mutation.
  */
-export const schema = buildSchema(readFileSync(schemaPath, 'utf-8'));
+export const schema = buildSchema(schemaString);

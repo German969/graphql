@@ -1,0 +1,6 @@
+# Root fields shared by the app (blog info, server time).
+
+type Query {
+  blogName: String
+  serverTime: String
+}

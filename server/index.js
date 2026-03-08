@@ -1,7 +1,7 @@
 import express from 'express';
 import { graphqlHTTP } from 'express-graphql';
 import { schema } from './schema.js';
-import { createRootValue } from './resolvers.js';
+import { createRootValue } from './resolvers/index.js';
 
 const app = express();
 const PORT = 4000;

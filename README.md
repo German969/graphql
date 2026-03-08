@@ -17,6 +17,7 @@ npm run dev
 - API: **http://localhost:4000/graphql**
 - GraphiQL (playground): open that URL in the browser
 - **Database:** SQLite. `server/blog.db` holds `users` and `posts` (posts can have an author). Created on first run; ignored by git (see `.gitignore`).
+- **Schema** is split in `server/schema/` (base, user, post); **resolvers** in `server/resolvers/` (blog, user, post) so user and post logic stay separate.
 
 ### Frontend (React)
 
