@@ -6,28 +6,22 @@ Variables let the client pass values into the query or mutation without string c
 
 ### Declare in the operation
 
+Our **`publishPost`** mutation (in **`server/schema/post.graphql`**) also takes **`authorUsername`**. In **`client/src/services/posts.js`** we use variables like this:
+
 ```graphql
-mutation PublishPost($title: String!, $body: String!) {
-  publishPost(title: $title, body: $body) {
-    id
-    title
-    body
-    publishedAt
+mutation PublishPost($title: String!, $body: String!, $authorUsername: String!) {
+  publishPost(title: $title, body: $body, authorUsername: $authorUsername) {
+    id title body publishedAt author { id username displayName }
   }
 }
 ```
 
-- **`$title`**, **`$body`** – Variable names (always prefixed with `$` in GraphQL).
+- **`$title`**, **`$body`**, **`$authorUsername`** – Variable names (always prefixed with `$` in GraphQL).
 - **`String!`** – Type of each variable (required here).
 
 ### Pass in the request
 
-```json
-{
-  "query": "mutation PublishPost($title: String!, $body: String!) { ... }",
-  "variables": { "title": "My post", "body": "Content here." }
-}
-```
+The `graphql()` helper (and thus the services) send **`variables`** in the request body; the query string stays static.
 
 ### Default values
 
@@ -104,14 +98,14 @@ query BlogQuery {
   }
 }
 
-mutation PublishPost($title: String!, $body: String!) {
-  publishPost(title: $title, body: $body) {
+mutation PublishPost($title: String!, $body: String!, $authorUsername: String!) {
+  publishPost(title: $title, body: $body, authorUsername: $authorUsername) {
     ...PostFields
   }
 }
 ```
 
-Now any change to “what a post looks like” is in one fragment.
+(Our schema defines **`publishPost(..., authorUsername: String!)`** in **`server/schema/post.graphql`**.) Now any change to “what a post looks like” is in one fragment.
 
 ### Inline fragments (for interfaces/unions)
 

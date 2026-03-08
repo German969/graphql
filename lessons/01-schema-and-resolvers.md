@@ -24,38 +24,16 @@ Each **post** has: `id`, `title`, `body`, `publishedAt`, and optionally **`autho
 
 ## Our first schema
 
-The schema lives in **`server/schema.graphql`** as a `.graphql` file (Schema Definition Language, SDL). The server loads it in `server/schema.js` so there’s a single source of truth:
+The schema is split into **`server/schema/`** (Schema Definition Language, SDL). **`server/schema.js`** reads `base.graphql`, `user.graphql`, and `post.graphql`, concatenates them, and passes the result to `buildSchema()`. Conceptually you get:
 
-```graphql
-type User {
-  id: ID!
-  username: String!
-  displayName: String!
-}
+- **`base.graphql`** – `Query { blogName, serverTime }`.
+- **`user.graphql`** – `User` type, `extend type Query { user(username) }`, `type Mutation { createUser(...) }`.
+- **`post.graphql`** – `Post` type, `extend type Query { posts }`, `extend type Mutation { publishPost(...) }`.
 
-type Post {
-  id: ID!
-  title: String!
-  body: String!
-  publishedAt: String!
-  author: User
-}
-
-type Query {
-  blogName: String
-  serverTime: String
-  posts: [Post!]!
-  user(username: String!): User
-}
-
-type Mutation {
-  createUser(username: String!, displayName: String!): User!
-  publishPost(title: String!, body: String!, authorUsername: String!): Post!
-}
-```
+Together that gives one logical schema: **User** and **Post** types, **Query** (blogName, serverTime, posts, user), and **Mutation** (createUser, publishPost with authorUsername). The actual definitions live in **`server/schema/base.graphql`**, **`user.graphql`**, and **`post.graphql`** (see the “Schema and resolvers: organized by domain” section below).
 
 - **`Query`** is the root type for *read* operations. Every GraphQL API has a `Query` type (and optionally `Mutation`, `Subscription`).
-- **`User`** and **`Post`** are custom types. **`Post.author`** is a *relation*: it’s of type `User` (or null for old posts). That’s how you model “each post has an optional author” in the schema.
+- **`User`** and **`Post`** are custom types. **`Post.author`** is a *relation*: it’s of type `User` (or null for old posts).
 - **`blogName`**, **`serverTime`**, **`posts`**, and **`user(username)`** are fields on `Query`. **`Mutation`** is the root type for *write* operations (Lesson 3).
 - The `!` means “non-null”; `[Post!]!` means “non-null list of non-null posts”. No `!` on **`author`** means it can be null.
 

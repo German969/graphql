@@ -43,5 +43,5 @@ Run the server before the client when doing the lessons.
 
 ## Editor
 
-- **GraphQL extension** – `.graphqlrc.yml` points the extension at `server/schema.graphql` and at `client/src` for documents, so you get schema-aware validation and autocomplete. Lesson 1 describes this in more detail.
+- **GraphQL extension** – `.graphqlrc.yml` points the extension at **`server/schema/*.graphql`** and at **`client/src`** for documents (including **`client/src/services/`** where the operations live), so you get schema-aware validation and autocomplete. Lesson 1 describes the split schema and resolvers.
 - **Syntax highlighting for `.graphql`** – The workspace recommends **GraphQL: Syntax Highlighting** (`GraphQL.vscode-graphql-syntax`). If `.graphql` files don’t highlight, install that extension; `.vscode/settings.json` associates `*.graphql`, `*.gql`, and `*.graphqls` with the GraphQL language.

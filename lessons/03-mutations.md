@@ -22,38 +22,26 @@ type Mutation {
 
 ## Resolvers for Mutation
 
-Mutations are resolved like queries: the resolver lives on the same root value object. We persist in SQLite via `server/db.js`:
+Mutations are resolved like queries: each resolver lives on the combined root value (see Lesson 1). They’re split by domain in **`server/resolvers/`**:
 
-```js
-createUser({ username, displayName }) {
-  return createUser(username, displayName);  // from db.js
-}
-publishPost({ title, body, authorUsername }) {
-  const author = getUserByUsername(authorUsername);
-  if (!author) throw new Error('User not found. Create the user first.');
-  return insertPost(title, body, Number(author.id));
-}
-```
+- **`user.js`** – `createUser({ username, displayName })` calls `createUser(username, displayName)` from `db.js`.
+- **`post.js`** – `publishPost({ title, body, authorUsername })` looks up the user with `getUserByUsername(authorUsername)`, then calls `insertPost(title, body, author.id)`.
 
-So when the client sends `publishPost(..., authorUsername: "alice")`, we look up the user and set the post’s `author_id` in the database.
+So when the client sends `publishPost(..., authorUsername: "alice")`, the post resolver looks up the user and sets the post’s `author_id` in the database.
 
 ## Calling mutations from the client
 
-We send a **mutation** and pass **variables**. Example: publish a post as the current user.
+We send a **mutation** and pass **variables**. The frontend doesn’t put GraphQL in the component: it uses **`services/posts.js`** and **`services/users.js`**. For example, **`publishPost(title, body, authorUsername)`** in `services/posts.js` runs:
 
 ```graphql
 mutation PublishPost($title: String!, $body: String!, $authorUsername: String!) {
   publishPost(title: $title, body: $body, authorUsername: $authorUsername) {
-    id
-    title
-    body
-    publishedAt
-    author { id username displayName }
+    id title body publishedAt author { id username displayName }
   }
 }
 ```
 
-The frontend remembers the “current user” (username + display name) in state and `localStorage`, and sends `authorUsername` when publishing. No authentication—just a chosen identity for posting.
+The app remembers the “current user” (username + display name) in state and `localStorage`, and passes `authorUsername` when calling `publishPost(...)`. No authentication—just a chosen identity for posting.
 
 ## Naming the operation
 
