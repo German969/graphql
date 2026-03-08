@@ -1,9 +1,18 @@
+# A small blog API: read blog info and posts, publish new posts.
+
+type Post {
+  id: ID!
+  title: String!
+  body: String!
+  publishedAt: String!
+}
+
 type Query {
-  hello: String
-  now: String
-  messages: [String!]!
+  blogName: String
+  serverTime: String
+  posts: [Post!]!
 }
 
 type Mutation {
-  addMessage(text: String!): String!
+  publishPost(title: String!, body: String!): Post!
 }

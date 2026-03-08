@@ -4,81 +4,103 @@
 
 In GraphQL, **queries** are for reading data; **mutations** are for changing data (create, update, delete). By convention they’re defined on a root type called `Mutation`.
 
-## Schema: adding Mutation
+In our blog API, the mutation **`publishPost`** creates a new post. The name makes it clear what it does: “publish a post,” not a generic “add” or “create.”
 
-We extended the schema with:
+## Schema: the Mutation type
+
+Our schema defines:
 
 ```graphql
+type Post {
+  id: ID!
+  title: String!
+  body: String!
+  publishedAt: String!
+}
+
 type Query {
-  hello: String
-  now: String
-  messages: [String!]!
+  blogName: String
+  serverTime: String
+  posts: [Post!]!
 }
 
 type Mutation {
-  addMessage(text: String!): String!
+  publishPost(title: String!, body: String!): Post!
 }
 ```
 
-- **`[String!]!`** – List of non-null strings; the list itself is non-null. So `messages` always returns an array (possibly empty).
-- **`addMessage(text: String!)`** – Takes one argument, `text`, required (non-null). Returns the added string.
+- **`publishPost(title: String!, body: String!)`** – Takes two required arguments: `title` and `body`. Both are non-null strings.
+- **`: Post!`** – The mutation returns a single post (the one just created), so the client can show it without refetching the full list.
 
 ## Resolvers for Mutation
 
-Mutations are resolved like queries: the resolver lives on the same root value object. The second argument to a resolver is **arguments** (the ones defined in the schema):
+Mutations are resolved like queries: the resolver lives on the same root value object. The first argument to a resolver is the **arguments** object (the ones defined in the schema):
 
 ```js
-addMessage({ text }) {
-  messages.push(text);
-  return text;
+publishPost({ title, body }) {
+  const post = {
+    id: String(nextPostId++),
+    title,
+    body,
+    publishedAt: new Date().toISOString(),
+  };
+  posts.push(post);
+  return post;
 }
 ```
 
-So when the client sends `addMessage(text: "Hi")`, GraphQL calls this with `{ text: "Hi" }`.
+So when the client sends `publishPost(title: "My title", body: "My body")`, GraphQL calls this with `{ title: "My title", body: "My body" }`.
 
 ## Calling a mutation from the client
 
 In the client we send a **mutation** operation and pass **variables** so the query string stays static:
 
 ```graphql
-mutation AddMessage($text: String!) {
-  addMessage(text: $text)
+mutation PublishPost($title: String!, $body: String!) {
+  publishPost(title: $title, body: $body) {
+    id
+    title
+    body
+    publishedAt
+  }
 }
 ```
 
-And in the request body:
+We ask for the created post’s fields so we can add it to the UI without refetching. In the request body we pass:
 
 ```json
 {
-  "query": "mutation AddMessage($text: String!) { addMessage(text: $text) }",
-  "variables": { "text": "Hello world" }
+  "query": "mutation PublishPost($title: String!, $body: String!) { ... }",
+  "variables": { "title": "First post", "body": "Hello, world!" }
 }
 ```
 
-Our `graphql()` helper already accepts `(query, variables)`, so we call:
+Our `graphql()` helper accepts `(query, variables)`, so we call:
 
 ```js
 await graphql(
-  `mutation AddMessage($text: String!) { addMessage(text: $text) }`,
-  { text: newText.trim() }
+  `mutation PublishPost($title: String!, $body: String!) {
+    publishPost(title: $title, body: $body) { id title body publishedAt }
+  }`,
+  { title: title.trim(), body: body.trim() }
 );
 ```
 
 ## Naming the operation
 
-`AddMessage` is an **operation name**. It’s optional but useful for logging and debugging. Syntax:
+`PublishPost` is an **operation name**. It’s optional but useful for logging and debugging. Syntax:
 
 ```graphql
-mutation AddMessage($text: String!) { ... }
+mutation PublishPost($title: String!, $body: String!) { ... }
 ```
 
 ## Takeaways
 
 | Concept | Role |
 |--------|------|
-| **Mutation** | Root type for operations that change data. |
-| **Arguments** | Fields can take arguments; resolvers receive them as the second parameter. |
+| **Mutation** | Root type for operations that change data (e.g. `publishPost`). |
+| **Arguments** | Fields can take arguments; resolvers receive them as the first parameter. |
 | **Variables** | Client passes `variables` in the request; the query uses `$name: Type` and references `$name`. |
-| **Lists in schema** | `[String!]!` = non-null list of non-null strings. |
+| **Return value** | Returning the created `Post` lets the client update the UI without an extra query. |
 
 Next: **Lesson 4** – Variables and fragments in more detail.

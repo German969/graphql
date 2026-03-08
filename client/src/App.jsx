@@ -4,37 +4,51 @@ import './App.css'
 
 function App() {
   const [data, setData] = useState(null)
-  const [messages, setMessages] = useState([])
+  const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [newText, setNewText] = useState('')
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
 
   useEffect(() => {
     graphql(`
-      query {
-        hello
-        now
-        messages
+      query BlogQuery {
+        blogName
+        serverTime
+        posts {
+          id
+          title
+          body
+          publishedAt
+        }
       }
     `)
       .then((d) => {
         setData(d)
-        setMessages(d.messages || [])
+        setPosts(d.posts || [])
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
 
-  async function handleAddMessage(e) {
+  async function handlePublishPost(e) {
     e.preventDefault()
-    if (!newText.trim()) return
+    if (!title.trim() || !body.trim()) return
     try {
-      await graphql(
-        `mutation AddMessage($text: String!) { addMessage(text: $text) }`,
-        { text: newText.trim() }
+      const result = await graphql(
+        `mutation PublishPost($title: String!, $body: String!) {
+          publishPost(title: $title, body: $body) {
+            id
+            title
+            body
+            publishedAt
+          }
+        }`,
+        { title: title.trim(), body: body.trim() }
       )
-      setMessages((m) => [...m, newText.trim()])
-      setNewText('')
+      setPosts((prev) => [result.publishPost, ...prev])
+      setTitle('')
+      setBody('')
     } catch (err) {
       setError(err.message)
     }
@@ -46,25 +60,38 @@ function App() {
 
   return (
     <div className="app">
-      <h1>GraphQL from React</h1>
-      <p><strong>hello:</strong> {data.hello}</p>
-      <p><strong>now:</strong> {data.now}</p>
+      <h1>{data.blogName}</h1>
+      <p><strong>Server time:</strong> {data.serverTime}</p>
 
       <section>
-        <h2>Messages</h2>
+        <h2>Publish a post</h2>
+        <form onSubmit={handlePublishPost}>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Post title"
+          />
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Post body"
+            rows={3}
+          />
+          <button type="submit">Publish</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Posts</h2>
         <ul>
-          {messages.map((msg, i) => (
-            <li key={i}>{msg}</li>
+          {posts.map((post) => (
+            <li key={post.id}>
+              <strong>{post.title}</strong>
+              <p>{post.body}</p>
+              <small>{post.publishedAt}</small>
+            </li>
           ))}
         </ul>
-        <form onSubmit={handleAddMessage}>
-          <input
-            value={newText}
-            onChange={(e) => setNewText(e.target.value)}
-            placeholder="New message"
-          />
-          <button type="submit">Add</button>
-        </form>
       </section>
     </div>
   )

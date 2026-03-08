@@ -7,20 +7,25 @@ Variables let the client pass values into the query or mutation without string c
 ### Declare in the operation
 
 ```graphql
-mutation AddMessage($text: String!) {
-  addMessage(text: $text)
+mutation PublishPost($title: String!, $body: String!) {
+  publishPost(title: $title, body: $body) {
+    id
+    title
+    body
+    publishedAt
+  }
 }
 ```
 
-- **`$text`** – Variable name (always prefixed with `$` in GraphQL).
-- **`String!`** – Type of the variable (required here).
+- **`$title`**, **`$body`** – Variable names (always prefixed with `$` in GraphQL).
+- **`String!`** – Type of each variable (required here).
 
 ### Pass in the request
 
 ```json
 {
-  "query": "mutation AddMessage($text: String!) { addMessage(text: $text) }",
-  "variables": { "text": "My message" }
+  "query": "mutation PublishPost($title: String!, $body: String!) { ... }",
+  "variables": { "title": "My post", "body": "Content here." }
 }
 ```
 
@@ -29,12 +34,13 @@ mutation AddMessage($text: String!) {
 You can give a variable a default so the client can omit it:
 
 ```graphql
-query GetMessages($limit: Int = 10) {
-  messages(limit: $limit)
+query BlogQuery($limit: Int = 10) {
+  blogName
+  posts(limit: $limit) { id title body publishedAt }
 }
 ```
 
-(Our current schema doesn’t have `limit` on `messages`; this is just for the syntax.)
+(Our current schema doesn’t have a `limit` argument on `posts`; this is just for the syntax.)
 
 ### Variable types must match
 
@@ -50,60 +56,62 @@ query GetMessages($limit: Int = 10) {
 
 ### Why use them?
 
-- Avoid repeating the same field list in several places.
-- When you add or remove a field, you change it in one place.
+- Avoid repeating the same field list in several places (e.g. post fields in a list and in a detail view).
+- When you add or remove a field on `Post`, you change it in one place.
 - They’re the building block for more advanced patterns (e.g. colocating UI and data).
 
 ### Syntax
 
-Define a fragment on a type:
+Define a fragment on a type. Our API has a **`Post`** type, so we can write:
 
 ```graphql
-fragment MessageFields on Message {
+fragment PostFields on Post {
   id
-  text
-  createdAt
+  title
+  body
+  publishedAt
 }
 ```
 
 Use it with `...FragmentName`:
 
 ```graphql
-query {
-  messages {
-    ...MessageFields
+query BlogQuery {
+  blogName
+  posts {
+    ...PostFields
   }
 }
 ```
 
-The type you use the fragment on must match the type the fragment is declared on (here, `Message`). Our current API only has `messages: [String!]!`, so we don’t have a `Message` type yet. Once we add a type like:
+The type you use the fragment on must match the type the fragment is declared on (here, `Post`). So `posts` returns `[Post!]!`, and each element is a `Post`, so `...PostFields` is valid.
+
+### Full example with our schema
 
 ```graphql
-type Message {
-  id: ID!
-  text: String!
-  createdAt: String!
-}
-type Query {
-  messages: [Message!]!
-}
-```
-
-then we could write:
-
-```graphql
-fragment MessageFields on Message {
+fragment PostFields on Post {
   id
-  text
-  createdAt
+  title
+  body
+  publishedAt
 }
 
-query {
-  messages {
-    ...MessageFields
+query BlogQuery {
+  blogName
+  serverTime
+  posts {
+    ...PostFields
+  }
+}
+
+mutation PublishPost($title: String!, $body: String!) {
+  publishPost(title: $title, body: $body) {
+    ...PostFields
   }
 }
 ```
+
+Now any change to “what a post looks like” is in one fragment.
 
 ### Inline fragments (for interfaces/unions)
 
@@ -132,7 +140,7 @@ We’ll use these when we introduce interfaces and unions in a later lesson.
 |--------|------|
 | **Variables** | `$name: Type` in the operation; pass values in `variables`; keep query static and type-safe. |
 | **Defaults** | `$limit: Int = 10` lets the client omit the variable. |
-| **Fragments** | Named `fragment X on Type { fields }`; reuse with `...X`. |
+| **Fragments** | Named `fragment X on Type { fields }`; reuse with `...X` (e.g. `PostFields` on `Post`). |
 | **Inline fragments** | `... on ConcreteType { fields }` for interfaces/unions. |
 
-You’ve now seen the core request shape: **queries**, **mutations**, **variables**, and **fragments**. Next steps could be: custom types and relations (Lesson 5), or error handling and validation (Lesson 6).
+You’ve now seen the core request shape: **queries**, **mutations**, **variables**, and **fragments** with a real-world blog example. Next steps could be: arguments on queries (e.g. `post(id: ID!)`), or error handling and validation (Lesson 6).

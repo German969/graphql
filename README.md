@@ -2,6 +2,8 @@
 
 A step-by-step GraphQL project with **Node (Express)** and **React**. Each lesson adds one concept and is documented in `lessons/`.
 
+We use a **blog** example so names are clear and real-world: **`blogName`**, **`serverTime`**, **`posts`** (list of **`Post`** with `id`, `title`, `body`, `publishedAt`), and a **`publishPost`** mutation to create posts.
+
 ## Setup
 
 ### Backend (GraphQL API)
@@ -39,3 +41,4 @@ Run the server before the client when doing the lessons.
 ## Editor
 
 - **GraphQL extension** – `.graphqlrc.yml` points the extension at `server/schema.graphql` and at `client/src` for documents, so you get schema-aware validation and autocomplete. Lesson 1 describes this in more detail.
+- **Syntax highlighting for `.graphql`** – The workspace recommends **GraphQL: Syntax Highlighting** (`GraphQL.vscode-graphql-syntax`). If `.graphql` files don’t highlight, install that extension; `.vscode/settings.json` associates `*.graphql`, `*.gql`, and `*.graphqls` with the GraphQL language.

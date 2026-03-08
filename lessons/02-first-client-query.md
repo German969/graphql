@@ -14,7 +14,7 @@ GraphQL is transport-agnostic, but over HTTP it’s usually:
 
 ```json
 {
-  "query": "query { hello now }",
+  "query": "query { blogName serverTime }",
   "variables": {}
 }
 ```
@@ -23,7 +23,7 @@ The server responds with JSON in this shape:
 
 ```json
 {
-  "data": { "hello": "Hello, GraphQL!", "now": "..." },
+  "data": { "blogName": "Learn GraphQL Blog", "serverTime": "...", "posts": [] },
   "errors": null
 }
 ```
@@ -57,22 +57,28 @@ So from React you only deal with the resolved `data`.
 
 ### 3. App component
 
-The app runs one query on mount:
+The app runs one query on mount: it asks for `blogName`, `serverTime`, and `posts` (with each post’s `id`, `title`, `body`, `publishedAt`):
 
 ```graphql
-query {
-  hello
-  now
+query BlogQuery {
+  blogName
+  serverTime
+  posts {
+    id
+    title
+    body
+    publishedAt
+  }
 }
 ```
 
-It stores the result in state and shows it. Same query you tried in GraphiQL—now from the browser via React.
+It stores the result in state and shows the blog name, server time, and list of posts. Same query you can run in GraphiQL—now from the browser via React.
 
 ## How to run
 
 1. Start the **server**: `cd server && npm run dev`
 2. Start the **client**: `cd client && npm run dev`
-3. Open the client URL (e.g. http://localhost:5173). You should see “Hello, GraphQL!” and the server time.
+3. Open the client URL (e.g. http://localhost:5173). You should see the blog name, server time, and an empty posts list (until you publish posts in Lesson 3).
 
 ## Takeaways
 
@@ -82,4 +88,4 @@ It stores the result in state and shows it. Same query you tried in GraphiQL—n
 | **Response** | Always JSON with `data` (and optionally `errors`). |
 | **Client** | Any HTTP client works; we used `fetch` and a thin wrapper. |
 
-Next: **Lesson 3** – Add mutations so the client can change data.
+Next: **Lesson 3** – Add mutations so the client can publish new posts.

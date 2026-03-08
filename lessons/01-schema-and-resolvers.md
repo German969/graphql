@@ -9,26 +9,45 @@ GraphQL is a **query language for your API** and a runtime that executes those q
 1. **Schema** – The contract. It defines the *types* and the *entry points* (e.g. `Query` for reading).
 2. **Resolvers** – The implementation. Each field in the schema is backed by a function that returns the value.
 
+## Our example: a small blog API
+
+We use a **blog** domain so names are clear and real-world:
+
+- **`blogName`** – Name of the blog (e.g. for the header).
+- **`serverTime`** – Current time on the server (useful for “last updated”).
+- **`posts`** – List of blog posts.
+- **`publishPost`** – Mutation to create a new post.
+
+Each **post** has: `id`, `title`, `body`, `publishedAt`.
+
 ## Our first schema
 
-The schema lives in **`server/schema.graphql`** as a `.graphql` file (Schema Definition Language, SDL). The server loads it in `server/schema.js` so there’s a single source of truth. A minimal version looks like:
+The schema lives in **`server/schema.graphql`** as a `.graphql` file (Schema Definition Language, SDL). The server loads it in `server/schema.js` so there’s a single source of truth:
 
 ```graphql
+type Post {
+  id: ID!
+  title: String!
+  body: String!
+  publishedAt: String!
+}
+
 type Query {
-  hello: String
-  now: String
-  messages: [String!]!
+  blogName: String
+  serverTime: String
+  posts: [Post!]!
 }
 
 type Mutation {
-  addMessage(text: String!): String!
+  publishPost(title: String!, body: String!): Post!
 }
 ```
 
 - **`Query`** is the root type for *read* operations. Every GraphQL API has a `Query` type (and optionally `Mutation`, `Subscription`).
-- **`hello`**, **`now`**, and **`messages`** are *fields* on `Query`. **`Mutation`** is the root type for *write* operations (we use it in Lesson 3).
+- **`blogName`**, **`serverTime`**, and **`posts`** are fields on `Query`. **`Mutation`** is the root type for *write* operations (we use it in Lesson 3).
+- **`Post`** is a custom type: each post has an `id`, `title`, `body`, and `publishedAt`. The `!` means “non-null”; `[Post!]!` means “non-null list of non-null posts”.
 
-So we’re saying: “Clients can ask for these fields and get back the declared types.”
+So we’re saying: “Clients can ask for blog info and a list of posts, and publish new posts that look like `Post`.”
 
 ## Schema file and the GraphQL extension
 
@@ -39,10 +58,10 @@ So we’re saying: “Clients can ask for these fields and get back the declared
 
 In `server/resolvers.js` we provide the logic:
 
-- For the **root** `Query` type, we pass a **root value** object whose keys match the field names.
-- Each value is a function that returns the field’s value.
+- For the **root** `Query` and `Mutation` types, we pass a **root value** object whose keys match the field names.
+- Each value is a function that returns the field’s value. For mutations, the function receives the **arguments** (e.g. `title`, `body`) as the first parameter.
 
-So when a client asks for `hello`, GraphQL calls `rootValue.hello()` and returns the result.
+So when a client asks for `blogName`, GraphQL calls `rootValue.blogName()` and returns the result. When they call `publishPost(title: "Hi", body: "...")`, GraphQL calls `rootValue.publishPost({ title, body })`.
 
 ## Running a query
 
@@ -56,8 +75,14 @@ Open **http://localhost:4000/graphql** (GraphiQL). Try:
 
 ```graphql
 query {
-  hello
-  now
+  blogName
+  serverTime
+  posts {
+    id
+    title
+    body
+    publishedAt
+  }
 }
 ```
 
@@ -66,8 +91,9 @@ You’ll get something like:
 ```json
 {
   "data": {
-    "hello": "Hello, GraphQL!",
-    "now": "2025-03-07T..."
+    "blogName": "Learn GraphQL Blog",
+    "serverTime": "2025-03-07T...",
+    "posts": []
   }
 }
 ```
@@ -79,6 +105,7 @@ You’ll get something like:
 | **Schema** | Defines types and what can be queried (the “what”). Lives in `server/schema.graphql`. |
 | **Resolvers** | Implement each field (the “how”). In `server/resolvers.js`. |
 | **Query** | Root type for read-only operations. |
+| **Custom types** | e.g. `Post` – shape the data your API returns. |
 | **GraphiQL** | Built-in UI to run queries against `/graphql`. |
 | **`.graphqlrc.yml`** | Config for the GraphQL extension: schema + documents for validation and autocomplete. |
 
