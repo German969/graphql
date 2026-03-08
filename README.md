@@ -35,3 +35,7 @@ npm run dev
 | 4 | Variables and fragments | [04-variables-and-fragments.md](lessons/04-variables-and-fragments.md) |
 
 Run the server before the client when doing the lessons.
+
+## Editor
+
+- **GraphQL extension** – `.graphqlrc.yml` points the extension at `server/schema.graphql` and at `client/src` for documents, so you get schema-aware validation and autocomplete. Lesson 1 describes this in more detail.

@@ -1,0 +1,9 @@
+type Query {
+  hello: String
+  now: String
+  messages: [String!]!
+}
+
+type Mutation {
+  addMessage(text: String!): String!
+}

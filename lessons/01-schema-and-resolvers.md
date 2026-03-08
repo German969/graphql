@@ -11,19 +11,29 @@ GraphQL is a **query language for your API** and a runtime that executes those q
 
 ## Our first schema
 
-In `server/schema.js` we use the GraphQL schema definition language (SDL):
+The schema lives in **`server/schema.graphql`** as a `.graphql` file (Schema Definition Language, SDL). The server loads it in `server/schema.js` so there’s a single source of truth. A minimal version looks like:
 
 ```graphql
 type Query {
   hello: String
   now: String
+  messages: [String!]!
+}
+
+type Mutation {
+  addMessage(text: String!): String!
 }
 ```
 
 - **`Query`** is the root type for *read* operations. Every GraphQL API has a `Query` type (and optionally `Mutation`, `Subscription`).
-- **`hello`** and **`now`** are *fields* on `Query`. Both return a `String`.
+- **`hello`**, **`now`**, and **`messages`** are *fields* on `Query`. **`Mutation`** is the root type for *write* operations (we use it in Lesson 3).
 
-So we’re saying: “Clients can ask for `hello` and/or `now`, and they’ll get strings back.”
+So we’re saying: “Clients can ask for these fields and get back the declared types.”
+
+## Schema file and the GraphQL extension
+
+- **`server/schema.graphql`** – Edit the schema here. `server/schema.js` reads this file and passes it to `buildSchema()`.
+- **`.graphqlrc.yml`** – Tells the GraphQL editor extension where the schema and operation documents live. With this, you get validation and autocomplete for queries/mutations in `client/src` (e.g. in your React components). Reload the editor window if the extension doesn’t pick it up.
 
 ## Resolvers (root value)
 
@@ -66,9 +76,10 @@ You’ll get something like:
 
 | Concept    | Role |
 |-----------|------|
-| **Schema** | Defines types and what can be queried (the “what”). |
-| **Resolvers** | Implement each field (the “how”). |
+| **Schema** | Defines types and what can be queried (the “what”). Lives in `server/schema.graphql`. |
+| **Resolvers** | Implement each field (the “how”). In `server/resolvers.js`. |
 | **Query** | Root type for read-only operations. |
 | **GraphiQL** | Built-in UI to run queries against `/graphql`. |
+| **`.graphqlrc.yml`** | Config for the GraphQL extension: schema + documents for validation and autocomplete. |
 
 Next: **Lesson 2** – Add a React app and run this same query from the client.
