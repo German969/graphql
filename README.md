@@ -46,6 +46,9 @@ npm run dev
 | 11 | Filtering and ordering | [11-filtering-and-ordering.md](lessons/11-filtering-and-ordering.md) |
 | 12 | Context | [12-context.md](lessons/12-context.md) |
 | 13 | Subscriptions | [13-subscriptions.md](lessons/13-subscriptions.md) |
+| 14 | Cache updates and optimistic UI | [14-cache-updates-and-optimistic-ui.md](lessons/14-cache-updates-and-optimistic-ui.md) |
+| 15 | Resolver parent parameter | [15-resolver-parent-parameter.md](lessons/15-resolver-parent-parameter.md) |
+| 16 | Apollo vs Relay | [16-apollo-vs-relay.md](lessons/16-apollo-vs-relay.md) |
 
 Run the server before the client when doing the lessons.
 

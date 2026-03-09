@@ -33,6 +33,8 @@ function validatePublishPost(title, body, authorUsername) {
   return { title: t, body: b, authorUsername: author };
 }
 
+const EXCERPT_LENGTH = 10;
+
 /**
  * Resolvers for Post-related Query and Mutation (posts, post, postsConnection, publishPost).
  */
@@ -68,6 +70,22 @@ export const postResolvers = {
     const post = insertPost(context.db, validated.title, validated.body, Number(author.id));
     pubsub.publish(POST_PUBLISHED, { postPublished: post });
     return post;
+  },
+};
+
+/**
+ * Post type resolvers. Nested fields receive the parent object as first argument.
+ * excerpt: computed from parent.body – demonstrates the parent parameter.
+ */
+export const postTypeResolvers = {
+  Post: {
+    excerpt(parent) {
+      if (!parent?.body) return '';
+      const body = String(parent.body);
+      return body.length <= EXCERPT_LENGTH
+        ? body
+        : body.slice(0, EXCERPT_LENGTH) + '...';
+    },
   },
 };
 

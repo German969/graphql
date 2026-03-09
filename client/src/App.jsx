@@ -11,6 +11,7 @@ import {
 import { loadCurrentUser, saveCurrentUser, setAuthToken, clearAuth } from './utils/user.js'
 import { formatDateTime } from './utils/format.js'
 import { getErrorMessage } from './utils/errors.js'
+import { prependPostToConnection } from './utils/cache.js'
 import CurrentUserSection from './components/CurrentUserSection.jsx'
 import PublishPostForm from './components/PublishPostForm.jsx'
 import PostsList from './components/PostsList.jsx'
@@ -44,7 +45,10 @@ function App() {
   })
   const [loginMutation, { error: loginError }] = useMutation(LOGIN_MUTATION)
   const [publishPostMutation, { error: publishError }] = useMutation(PUBLISH_POST_MUTATION, {
-    refetchQueries: [{ query: BLOG_QUERY, variables: queryVars }],
+    update(cache, { data }) {
+      const newPost = data?.publishPost
+      if (newPost) prependPostToConnection(cache, newPost, queryVars)
+    },
   })
 
   const [showUserForm, setShowUserForm] = useState(() => !loadCurrentUser())
@@ -103,13 +107,30 @@ function App() {
       setMutationError('Log in before publishing.')
       return
     }
+    const trimmedTitle = title.trim()
+    const trimmedBody = body.trim()
     setMutationError(null)
     try {
       await publishPostMutation({
         variables: {
-          title: title.trim(),
-          body: body.trim(),
+          title: trimmedTitle,
+          body: trimmedBody,
           authorUsername: currentUser.username,
+        },
+        optimisticResponse: {
+          publishPost: {
+            __typename: 'Post',
+            id: `optimistic-${Date.now()}`,
+            title: trimmedTitle,
+            body: trimmedBody,
+            publishedAt: new Date().toISOString(),
+            author: {
+              __typename: 'User',
+              id: currentUser.id ?? 'temp',
+              username: currentUser.username,
+              displayName: currentUser.displayName,
+            },
+          },
         },
       })
       setTitle('')

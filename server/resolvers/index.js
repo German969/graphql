@@ -1,6 +1,6 @@
 import { blogResolvers } from './blog.js';
 import { userResolvers } from './user.js';
-import { postResolvers, subscriptionResolvers } from './post.js';
+import { postResolvers, postTypeResolvers, subscriptionResolvers } from './post.js';
 
 /**
  * Apollo Server expects resolvers by type (Query, Mutation, Subscription).
@@ -21,6 +21,7 @@ export const resolvers = {
     publishPost: postResolvers.publishPost,
   },
   Subscription: subscriptionResolvers.Subscription,
+  Post: postTypeResolvers.Post,
 };
 
 /** @deprecated Used only with express-graphql; Apollo uses `resolvers` above. */
