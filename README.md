@@ -42,6 +42,7 @@ npm run dev
 | 7 | Apollo Server | [07-apollo-server.md](lessons/07-apollo-server.md) |
 | 8 | Arguments on queries | [08-arguments-on-queries.md](lessons/08-arguments-on-queries.md) |
 | 9 | Pagination | [09-pagination.md](lessons/09-pagination.md) |
+| 10 | Error handling and validation | [10-error-handling-and-validation.md](lessons/10-error-handling-and-validation.md) |
 
 Run the server before the client when doing the lessons.
 

@@ -83,11 +83,18 @@ function formatDateTime(isoString) {
   }).format(date)
 }
 
+/** Get the first GraphQL error message, or the error's message. */
+function getErrorMessage(err) {
+  const gqlErrors = err?.graphQLErrors
+  if (gqlErrors?.length) return gqlErrors[0].message
+  return err?.message ?? 'Something went wrong.'
+}
+
 function App() {
   const { data, loading, error: queryError, fetchMore } = useQuery(BLOG_QUERY, {
     variables: { first: POSTS_PAGE_SIZE },
   })
-  const [createUserMutation] = useMutation(CREATE_USER_MUTATION)
+  const [createUserMutation, { error: createUserError }] = useMutation(CREATE_USER_MUTATION)
   const [publishPostMutation, { error: publishError }] = useMutation(PUBLISH_POST_MUTATION, {
     refetchQueries: [{ query: BLOG_QUERY, variables: { first: POSTS_PAGE_SIZE } }],
   })
@@ -100,7 +107,11 @@ function App() {
   const [displayNameInput, setDisplayNameInput] = useState('')
   const [mutationError, setMutationError] = useState(null)
 
-  const error = queryError?.message ?? publishError?.message ?? mutationError
+  const error =
+    queryError?.message ??
+    (publishError ? getErrorMessage(publishError) : null) ??
+    (createUserError ? getErrorMessage(createUserError) : null) ??
+    mutationError
   const connection = data?.postsConnection
   const posts = connection?.edges?.map((e) => e.node) ?? []
   const pageInfo = connection?.pageInfo
@@ -109,7 +120,6 @@ function App() {
     e.preventDefault()
     const username = usernameInput.trim()
     const displayName = displayNameInput.trim()
-    if (!username || !displayName) return
     setMutationError(null)
     createUserMutation({ variables: { username, displayName } })
       .then(({ data: res }) => {
@@ -119,7 +129,7 @@ function App() {
         saveCurrentUser(u)
         setShowUserForm(false)
       })
-      .catch((e) => setMutationError(e.message))
+      .catch((e) => setMutationError(getErrorMessage(e)))
   }
 
   function handleRemoveUser() {
@@ -138,7 +148,6 @@ function App() {
 
   async function handlePublishPost(e) {
     e.preventDefault()
-    if (!title.trim() || !body.trim()) return
     if (!currentUser) {
       setMutationError('Set a current user (username + display name) before publishing.')
       return
@@ -155,7 +164,7 @@ function App() {
       setTitle('')
       setBody('')
     } catch (err) {
-      setMutationError(err.message)
+      setMutationError(getErrorMessage(err))
     }
   }
 
