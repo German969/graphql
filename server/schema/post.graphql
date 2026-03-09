@@ -1,5 +1,12 @@
 # Post type and post-related query + mutation.
 
+enum PostOrderBy {
+  PUBLISHED_AT_DESC
+  PUBLISHED_AT_ASC
+  TITLE_ASC
+  TITLE_DESC
+}
+
 type Post {
   id: ID!
   title: String!
@@ -25,10 +32,10 @@ type PostConnection {
 }
 
 extend type Query {
-  posts(limit: Int): [Post!]!
+  posts(limit: Int, authorUsername: String, orderBy: PostOrderBy): [Post!]!
   post(id: ID!): Post
-  """Paginated list of posts (newest first). Use endCursor with after for next page."""
-  postsConnection(first: Int = 10, after: String): PostConnection!
+  """Paginated list of posts. Filter by author, order, use endCursor with after for next page."""
+  postsConnection(first: Int = 10, after: String, authorUsername: String, orderBy: PostOrderBy): PostConnection!
 }
 
 extend type Mutation {

@@ -90,6 +90,32 @@
   flex-shrink: 0;
 }
 
+.posts-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.posts-filters .filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.posts-filters .filter-field label {
+  font-size: 0.85rem;
+  color: var(--muted, #888);
+}
+
+.posts-filters input,
+.posts-filters select {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.9rem;
+  min-width: 10rem;
+}
+
 .posts-section .load-more {
   margin-top: 0.75rem;
   padding: 0.4rem 1rem;

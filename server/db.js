@@ -101,53 +101,114 @@ export function getPostById(id) {
   return mapRowToPost(row);
 }
 
+const ORDER_CLAUSES = {
+  PUBLISHED_AT_DESC: 'ORDER BY p.id DESC',
+  PUBLISHED_AT_ASC: 'ORDER BY p.id ASC',
+  TITLE_ASC: 'ORDER BY p.title ASC, p.id ASC',
+  TITLE_DESC: 'ORDER BY p.title DESC, p.id DESC',
+};
+
 /**
- * Get all posts, newest first, with author (User or null).
- * Optional limit caps the number of posts returned.
+ * Get all posts with optional filter and ordering.
+ * orderBy defaults to PUBLISHED_AT_DESC (newest first).
  */
-export function getAllPosts(limit = null) {
+export function getAllPosts(limit = null, authorUsername = null, orderBy = 'PUBLISHED_AT_DESC') {
   const useLimit = limit != null && Number.isInteger(limit) && limit > 0;
+  const order = ORDER_CLAUSES[orderBy] ?? ORDER_CLAUSES.PUBLISHED_AT_DESC;
+  const hasAuthor = authorUsername != null && String(authorUsername).trim() !== '';
+  const where = hasAuthor ? 'WHERE u.username = ?' : '';
+  const params = hasAuthor ? [authorUsername.trim()] : [];
+  if (useLimit) params.push(limit);
+
   const sql = `
     ${postSelect}
-    ORDER BY p.id DESC
+    ${where}
+    ${order}
     ${useLimit ? 'LIMIT ?' : ''}
   `;
-  const rows = useLimit ? db.prepare(sql).all(limit) : db.prepare(sql).all();
+  const rows = db.prepare(sql).all(...params);
   return rows.map(mapRowToPost);
+}
+
+function buildCursor(row, orderBy) {
+  const id = String(row.id);
+  if (orderBy === 'PUBLISHED_AT_DESC' || orderBy === 'PUBLISHED_AT_ASC') {
+    return id;
+  }
+  return Buffer.from(JSON.stringify({ t: row.title, i: id })).toString('base64');
+}
+
+function parseCursor(after, orderBy) {
+  if (after == null || after === '') return null;
+  if (orderBy === 'PUBLISHED_AT_DESC' || orderBy === 'PUBLISHED_AT_ASC') {
+    const id = Number(after);
+    return Number.isNaN(id) ? null : { id };
+  }
+  try {
+    const decoded = JSON.parse(Buffer.from(after, 'base64').toString());
+    return decoded?.t != null && decoded?.i != null ? { title: decoded.t, id: decoded.i } : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Cursor-based pagination: returns a PostConnection (edges + pageInfo).
- * first: max items per page (default 10). after: cursor (post id) for "next page".
- * Posts are ordered by id DESC; "after" means "posts with id < after".
+ * Supports authorUsername filter and orderBy.
  */
-export function getPostsConnection(first = 10, after = null) {
+export function getPostsConnection(first = 10, after = null, authorUsername = null, orderBy = 'PUBLISHED_AT_DESC') {
   const limit = Math.min(Math.max(Number(first) || 10, 1), 100);
   const fetchLimit = limit + 1;
-  const afterId = after != null && after !== '' ? Number(after) : null;
+  const order = ORDER_CLAUSES[orderBy] ?? ORDER_CLAUSES.PUBLISHED_AT_DESC;
+  const hasAuthor = authorUsername != null && String(authorUsername).trim() !== '';
+  const cursor = parseCursor(after, orderBy);
 
-  const params =
-    afterId != null && !Number.isNaN(afterId) ? [afterId, fetchLimit] : [fetchLimit];
-  const sql =
-    afterId != null && !Number.isNaN(afterId)
-      ? `
+  const conditions = [];
+  const params = [];
+
+  if (hasAuthor) {
+    conditions.push('u.username = ?');
+    params.push(authorUsername.trim());
+  }
+
+  if (cursor) {
+    if (cursor.id !== undefined && cursor.title === undefined) {
+      const id = Number(cursor.id);
+      if (!Number.isNaN(id)) {
+        if (orderBy === 'PUBLISHED_AT_DESC') {
+          conditions.push('p.id < ?');
+          params.push(id);
+        } else {
+          conditions.push('p.id > ?');
+          params.push(id);
+        }
+      }
+    } else if (cursor.title != null && cursor.id != null) {
+      if (orderBy === 'TITLE_ASC') {
+        conditions.push('(p.title > ? OR (p.title = ? AND p.id > ?))');
+        params.push(cursor.title, cursor.title, Number(cursor.id));
+      } else {
+        conditions.push('(p.title < ? OR (p.title = ? AND p.id < ?))');
+        params.push(cursor.title, cursor.title, Number(cursor.id));
+      }
+    }
+  }
+
+  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+  params.push(fetchLimit);
+
+  const sql = `
     ${postSelect}
-    WHERE p.id < ?
-    ORDER BY p.id DESC
-    LIMIT ?
-  `
-      : `
-    ${postSelect}
-    ORDER BY p.id DESC
+    ${where}
+    ${order}
     LIMIT ?
   `;
-
   const rows = db.prepare(sql).all(...params);
   const hasNextPage = rows.length > limit;
   const slice = hasNextPage ? rows.slice(0, limit) : rows;
   const edges = slice.map((row) => {
     const node = mapRowToPost(row);
-    return { node, cursor: node.id };
+    return { node, cursor: buildCursor(row, orderBy) };
   });
   const endCursor = edges.length > 0 ? edges[edges.length - 1].cursor : null;
 

@@ -43,6 +43,7 @@ npm run dev
 | 8 | Arguments on queries | [08-arguments-on-queries.md](lessons/08-arguments-on-queries.md) |
 | 9 | Pagination | [09-pagination.md](lessons/09-pagination.md) |
 | 10 | Error handling and validation | [10-error-handling-and-validation.md](lessons/10-error-handling-and-validation.md) |
+| 11 | Filtering and ordering | [11-filtering-and-ordering.md](lessons/11-filtering-and-ordering.md) |
 
 Run the server before the client when doing the lessons.
 

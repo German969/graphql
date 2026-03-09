@@ -11,7 +11,7 @@ const client = new ApolloClient({
     typePolicies: {
       Query: {
         fields: {
-          postsConnection: relayStylePagination(),
+          postsConnection: relayStylePagination(['first', 'after', 'authorUsername', 'orderBy']),
         },
       },
     },

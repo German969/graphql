@@ -36,14 +36,19 @@ function validatePublishPost(title, body, authorUsername) {
  * Resolvers for Post-related Query and Mutation (posts, post, postsConnection, publishPost).
  */
 export const postResolvers = {
-  posts(_, { limit }) {
-    return getAllPosts(limit);
+  posts(_, { limit, authorUsername, orderBy }) {
+    return getAllPosts(limit ?? undefined, authorUsername ?? undefined, orderBy ?? 'PUBLISHED_AT_DESC');
   },
   post(_, { id }) {
     return getPostById(id) ?? null;
   },
-  postsConnection(_, { first, after }) {
-    return getPostsConnection(first, after ?? undefined);
+  postsConnection(_, { first, after, authorUsername, orderBy }) {
+    return getPostsConnection(
+      first ?? 10,
+      after ?? undefined,
+      authorUsername ?? undefined,
+      orderBy ?? 'PUBLISHED_AT_DESC'
+    );
   },
   publishPost(_, { title, body, authorUsername }) {
     const validated = validatePublishPost(title, body, authorUsername);

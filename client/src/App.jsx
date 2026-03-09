@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { gql, useQuery, useMutation } from '@apollo/client'
 import './App.css'
 
@@ -7,10 +7,10 @@ const CURRENT_USER_KEY = 'blog-current-user'
 const POSTS_PAGE_SIZE = 5
 
 const BLOG_QUERY = gql`
-  query BlogQuery($first: Int, $after: String) {
+  query BlogQuery($first: Int, $after: String, $authorUsername: String, $orderBy: PostOrderBy) {
     blogName
     serverTime
-    postsConnection(first: $first, after: $after) {
+    postsConnection(first: $first, after: $after, authorUsername: $authorUsername, orderBy: $orderBy) {
       edges {
         node {
           id
@@ -90,13 +90,30 @@ function getErrorMessage(err) {
   return err?.message ?? 'Something went wrong.'
 }
 
+const FILTER_DEBOUNCE_MS = 300
+
 function App() {
+  const [authorFilter, setAuthorFilter] = useState('')
+  const [debouncedAuthorFilter, setDebouncedAuthorFilter] = useState('')
+  const [orderBy, setOrderBy] = useState('PUBLISHED_AT_DESC')
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedAuthorFilter(authorFilter), FILTER_DEBOUNCE_MS)
+    return () => clearTimeout(id)
+  }, [authorFilter])
+
+  const queryVars = {
+    first: POSTS_PAGE_SIZE,
+    authorUsername: debouncedAuthorFilter.trim() || null,
+    orderBy,
+  }
+
   const { data, loading, error: queryError, fetchMore } = useQuery(BLOG_QUERY, {
-    variables: { first: POSTS_PAGE_SIZE },
+    variables: queryVars,
   })
   const [createUserMutation, { error: createUserError }] = useMutation(CREATE_USER_MUTATION)
   const [publishPostMutation, { error: publishError }] = useMutation(PUBLISH_POST_MUTATION, {
-    refetchQueries: [{ query: BLOG_QUERY, variables: { first: POSTS_PAGE_SIZE } }],
+    refetchQueries: [{ query: BLOG_QUERY, variables: queryVars }],
   })
 
   const [title, setTitle] = useState('')
@@ -256,6 +273,31 @@ function App() {
         <main className="app-main">
       <section className="posts-section">
         <h2>Posts</h2>
+        <div className="posts-filters">
+          <div className="filter-field">
+            <label htmlFor="author-filter">Filter by author</label>
+            <input
+              id="author-filter"
+              type="text"
+              value={authorFilter}
+              onChange={(e) => setAuthorFilter(e.target.value)}
+              placeholder="Username (leave empty for all)"
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="order-by">Order by</label>
+            <select
+              id="order-by"
+              value={orderBy}
+              onChange={(e) => setOrderBy(e.target.value)}
+            >
+              <option value="PUBLISHED_AT_DESC">Newest first</option>
+              <option value="PUBLISHED_AT_ASC">Oldest first</option>
+              <option value="TITLE_ASC">Title A–Z</option>
+              <option value="TITLE_DESC">Title Z–A</option>
+            </select>
+          </div>
+        </div>
         <ul>
           {posts.map((post) => (
             <li key={post.id}>
@@ -274,7 +316,12 @@ function App() {
             className="load-more"
             onClick={() =>
               fetchMore({
-                variables: { after: pageInfo.endCursor, first: POSTS_PAGE_SIZE },
+                variables: {
+                  after: pageInfo.endCursor,
+                  first: POSTS_PAGE_SIZE,
+                  authorUsername: debouncedAuthorFilter.trim() || null,
+                  orderBy,
+                },
               })
             }
           >
