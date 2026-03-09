@@ -1,11 +1,17 @@
-import { getAllPosts, getUserByUsername, insertPost } from '../db.js';
+import { getAllPosts, getPostById, getPostsConnection, getUserByUsername, insertPost } from '../db.js';
 
 /**
- * Resolvers for Post-related Query and Mutation (posts, publishPost).
+ * Resolvers for Post-related Query and Mutation (posts, post, postsConnection, publishPost).
  */
 export const postResolvers = {
-  posts() {
-    return getAllPosts();
+  posts(_, { limit }) {
+    return getAllPosts(limit);
+  },
+  post(_, { id }) {
+    return getPostById(id) ?? null;
+  },
+  postsConnection(_, { first, after }) {
+    return getPostsConnection(first, after ?? undefined);
   },
   publishPost(_, { title, body, authorUsername }) {
     const author = getUserByUsername(authorUsername);

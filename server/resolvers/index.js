@@ -11,6 +11,7 @@ export const resolvers = {
     ...blogResolvers,
     user: userResolvers.user,
     posts: postResolvers.posts,
+    post: postResolvers.post,
   },
   Mutation: {
     createUser: userResolvers.createUser,

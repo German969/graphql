@@ -4,19 +4,29 @@ import './App.css'
 
 const CURRENT_USER_KEY = 'blog-current-user'
 
+const POSTS_PAGE_SIZE = 5
+
 const BLOG_QUERY = gql`
-  query BlogQuery {
+  query BlogQuery($first: Int, $after: String) {
     blogName
     serverTime
-    posts {
-      id
-      title
-      body
-      publishedAt
-      author {
-        id
-        username
-        displayName
+    postsConnection(first: $first, after: $after) {
+      edges {
+        node {
+          id
+          title
+          body
+          publishedAt
+          author {
+            id
+            username
+            displayName
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
       }
     }
   }
@@ -74,10 +84,12 @@ function formatDateTime(isoString) {
 }
 
 function App() {
-  const { data, loading, error: queryError } = useQuery(BLOG_QUERY)
+  const { data, loading, error: queryError, fetchMore } = useQuery(BLOG_QUERY, {
+    variables: { first: POSTS_PAGE_SIZE },
+  })
   const [createUserMutation] = useMutation(CREATE_USER_MUTATION)
   const [publishPostMutation, { error: publishError }] = useMutation(PUBLISH_POST_MUTATION, {
-    refetchQueries: [{ query: BLOG_QUERY }],
+    refetchQueries: [{ query: BLOG_QUERY, variables: { first: POSTS_PAGE_SIZE } }],
   })
 
   const [title, setTitle] = useState('')
@@ -89,7 +101,9 @@ function App() {
   const [mutationError, setMutationError] = useState(null)
 
   const error = queryError?.message ?? publishError?.message ?? mutationError
-  const posts = data?.posts ?? []
+  const connection = data?.postsConnection
+  const posts = connection?.edges?.map((e) => e.node) ?? []
+  const pageInfo = connection?.pageInfo
 
   function handleSetCurrentUser(e) {
     e.preventDefault()
@@ -245,6 +259,19 @@ function App() {
             </li>
           ))}
         </ul>
+        {pageInfo?.hasNextPage && (
+          <button
+            type="button"
+            className="load-more"
+            onClick={() =>
+              fetchMore({
+                variables: { after: pageInfo.endCursor, first: POSTS_PAGE_SIZE },
+              })
+            }
+          >
+            Load more
+          </button>
+        )}
       </section>
         </main>
       </div>

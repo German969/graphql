@@ -40,6 +40,8 @@ npm run dev
 | 5 | Multiple types and relations | [05-types-and-relations.md](lessons/05-types-and-relations.md) |
 | 6 | Apollo Client | [06-apollo-client.md](lessons/06-apollo-client.md) |
 | 7 | Apollo Server | [07-apollo-server.md](lessons/07-apollo-server.md) |
+| 8 | Arguments on queries | [08-arguments-on-queries.md](lessons/08-arguments-on-queries.md) |
+| 9 | Pagination | [09-pagination.md](lessons/09-pagination.md) |
 
 Run the server before the client when doing the lessons.
 

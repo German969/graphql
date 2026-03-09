@@ -60,24 +60,21 @@ export function getUserByUsername(username) {
   };
 }
 
-/**
- * Get all posts, newest first, with author (User or null).
- */
-export function getAllPosts() {
-  const rows = db.prepare(`
-    SELECT
-      p.id,
-      p.title,
-      p.body,
-      p.published_at AS publishedAt,
-      p.author_id AS authorId,
-      u.username AS author_username,
-      u.display_name AS author_displayName
-    FROM posts p
-    LEFT JOIN users u ON p.author_id = u.id
-    ORDER BY p.id DESC
-  `).all();
-  return rows.map((row) => ({
+const postSelect = `
+  SELECT
+    p.id,
+    p.title,
+    p.body,
+    p.published_at AS publishedAt,
+    p.author_id AS authorId,
+    u.username AS author_username,
+    u.display_name AS author_displayName
+  FROM posts p
+  LEFT JOIN users u ON p.author_id = u.id
+`;
+
+function mapRowToPost(row) {
+  return {
     id: String(row.id),
     title: row.title,
     body: row.body,
@@ -89,7 +86,78 @@ export function getAllPosts() {
           username: row.author_username,
           displayName: row.author_displayName,
         },
-  }));
+  };
+}
+
+/**
+ * Get a single post by id, or null if not found.
+ */
+export function getPostById(id) {
+  const row = db.prepare(`
+    ${postSelect}
+    WHERE p.id = ?
+  `).get(Number(id));
+  if (!row) return null;
+  return mapRowToPost(row);
+}
+
+/**
+ * Get all posts, newest first, with author (User or null).
+ * Optional limit caps the number of posts returned.
+ */
+export function getAllPosts(limit = null) {
+  const useLimit = limit != null && Number.isInteger(limit) && limit > 0;
+  const sql = `
+    ${postSelect}
+    ORDER BY p.id DESC
+    ${useLimit ? 'LIMIT ?' : ''}
+  `;
+  const rows = useLimit ? db.prepare(sql).all(limit) : db.prepare(sql).all();
+  return rows.map(mapRowToPost);
+}
+
+/**
+ * Cursor-based pagination: returns a PostConnection (edges + pageInfo).
+ * first: max items per page (default 10). after: cursor (post id) for "next page".
+ * Posts are ordered by id DESC; "after" means "posts with id < after".
+ */
+export function getPostsConnection(first = 10, after = null) {
+  const limit = Math.min(Math.max(Number(first) || 10, 1), 100);
+  const fetchLimit = limit + 1;
+  const afterId = after != null && after !== '' ? Number(after) : null;
+
+  const params =
+    afterId != null && !Number.isNaN(afterId) ? [afterId, fetchLimit] : [fetchLimit];
+  const sql =
+    afterId != null && !Number.isNaN(afterId)
+      ? `
+    ${postSelect}
+    WHERE p.id < ?
+    ORDER BY p.id DESC
+    LIMIT ?
+  `
+      : `
+    ${postSelect}
+    ORDER BY p.id DESC
+    LIMIT ?
+  `;
+
+  const rows = db.prepare(sql).all(...params);
+  const hasNextPage = rows.length > limit;
+  const slice = hasNextPage ? rows.slice(0, limit) : rows;
+  const edges = slice.map((row) => {
+    const node = mapRowToPost(row);
+    return { node, cursor: node.id };
+  });
+  const endCursor = edges.length > 0 ? edges[edges.length - 1].cursor : null;
+
+  return {
+    edges,
+    pageInfo: {
+      hasNextPage,
+      endCursor,
+    },
+  };
 }
 
 /**

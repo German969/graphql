@@ -8,8 +8,27 @@ type Post {
   author: User
 }
 
+# Cursor-based pagination (Relay-style)
+type PageInfo {
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type PostEdge {
+  node: Post!
+  cursor: String!
+}
+
+type PostConnection {
+  edges: [PostEdge!]!
+  pageInfo: PageInfo!
+}
+
 extend type Query {
-  posts: [Post!]!
+  posts(limit: Int): [Post!]!
+  post(id: ID!): Post
+  """Paginated list of posts (newest first). Use endCursor with after for next page."""
+  postsConnection(first: Int = 10, after: String): PostConnection!
 }
 
 extend type Mutation {

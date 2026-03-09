@@ -90,6 +90,12 @@
   flex-shrink: 0;
 }
 
+.posts-section .load-more {
+  margin-top: 0.75rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+}
+
 .posts-section ul {
   flex: 1;
   min-height: 0;
