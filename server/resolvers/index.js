@@ -12,6 +12,7 @@ export const resolvers = {
     user: userResolvers.user,
     posts: postResolvers.posts,
     post: postResolvers.post,
+    postsConnection: postResolvers.postsConnection,
   },
   Mutation: {
     createUser: userResolvers.createUser,
