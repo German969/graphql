@@ -6,10 +6,23 @@ type User {
   displayName: String!
 }
 
+type LoginPayload {
+  token: String!
+  user: User!
+}
+
 extend type Query {
   user(username: String!): User
+  """Current authenticated user (from context). Returns null if not logged in."""
+  me: User
 }
 
 type Mutation {
   createUser(username: String!, displayName: String!): User!
+  """
+  Login with username and password (password must equal username for this demo).
+  If user exists: verify password, return token.
+  If user doesn't exist: create user (displayName required), return token.
+  """
+  login(username: String!, password: String!, displayName: String): LoginPayload!
 }

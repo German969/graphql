@@ -36,20 +36,20 @@ if (!hasAuthorId) {
 /**
  * Create or update a user by username. Returns the user.
  */
-export function createUser(username, displayName) {
-  const stmt = db.prepare(`
+export function createUser(database, username, displayName) {
+  const stmt = database.prepare(`
     INSERT INTO users (username, display_name) VALUES (?, ?)
     ON CONFLICT(username) DO UPDATE SET display_name = excluded.display_name
   `);
   stmt.run(username, displayName);
-  return getUserByUsername(username);
+  return getUserByUsername(database, username);
 }
 
 /**
  * Get user by username, or null.
  */
-export function getUserByUsername(username) {
-  const row = db.prepare(`
+export function getUserByUsername(database, username) {
+  const row = database.prepare(`
     SELECT id, username, display_name AS displayName FROM users WHERE username = ?
   `).get(username);
   if (!row) return null;
@@ -92,8 +92,8 @@ function mapRowToPost(row) {
 /**
  * Get a single post by id, or null if not found.
  */
-export function getPostById(id) {
-  const row = db.prepare(`
+export function getPostById(database, id) {
+  const row = database.prepare(`
     ${postSelect}
     WHERE p.id = ?
   `).get(Number(id));
@@ -112,7 +112,7 @@ const ORDER_CLAUSES = {
  * Get all posts with optional filter and ordering.
  * orderBy defaults to PUBLISHED_AT_DESC (newest first).
  */
-export function getAllPosts(limit = null, authorUsername = null, orderBy = 'PUBLISHED_AT_DESC') {
+export function getAllPosts(database, limit = null, authorUsername = null, orderBy = 'PUBLISHED_AT_DESC') {
   const useLimit = limit != null && Number.isInteger(limit) && limit > 0;
   const order = ORDER_CLAUSES[orderBy] ?? ORDER_CLAUSES.PUBLISHED_AT_DESC;
   const hasAuthor = authorUsername != null && String(authorUsername).trim() !== '';
@@ -126,7 +126,7 @@ export function getAllPosts(limit = null, authorUsername = null, orderBy = 'PUBL
     ${order}
     ${useLimit ? 'LIMIT ?' : ''}
   `;
-  const rows = db.prepare(sql).all(...params);
+  const rows = database.prepare(sql).all(...params);
   return rows.map(mapRowToPost);
 }
 
@@ -156,7 +156,7 @@ function parseCursor(after, orderBy) {
  * Cursor-based pagination: returns a PostConnection (edges + pageInfo).
  * Supports authorUsername filter and orderBy.
  */
-export function getPostsConnection(first = 10, after = null, authorUsername = null, orderBy = 'PUBLISHED_AT_DESC') {
+export function getPostsConnection(database, first = 10, after = null, authorUsername = null, orderBy = 'PUBLISHED_AT_DESC') {
   const limit = Math.min(Math.max(Number(first) || 10, 1), 100);
   const fetchLimit = limit + 1;
   const order = ORDER_CLAUSES[orderBy] ?? ORDER_CLAUSES.PUBLISHED_AT_DESC;
@@ -203,7 +203,7 @@ export function getPostsConnection(first = 10, after = null, authorUsername = nu
     ${order}
     LIMIT ?
   `;
-  const rows = db.prepare(sql).all(...params);
+  const rows = database.prepare(sql).all(...params);
   const hasNextPage = rows.length > limit;
   const slice = hasNextPage ? rows.slice(0, limit) : rows;
   const edges = slice.map((row) => {
@@ -224,13 +224,13 @@ export function getPostsConnection(first = 10, after = null, authorUsername = nu
 /**
  * Insert a new post; returns the created post with author.
  */
-export function insertPost(title, body, authorId) {
+export function insertPost(database, title, body, authorId) {
   const publishedAt = new Date().toISOString();
-  const result = db.prepare(`
+  const result = database.prepare(`
     INSERT INTO posts (title, body, published_at, author_id)
     VALUES (?, ?, ?, ?)
   `).run(title, body, publishedAt, authorId ?? null);
   const id = String(result.lastInsertRowid);
-  const post = getAllPosts().find((p) => p.id === id);
+  const post = getAllPosts(database).find((p) => p.id === id);
   return post ?? { id, title, body, publishedAt, author: null };
 }

@@ -219,6 +219,12 @@
   max-width: 28rem;
 }
 
+.publish-form .form-hint {
+  font-size: 0.85rem;
+  color: var(--muted, #888);
+  margin: 0 0 0.5rem 0;
+}
+
 .publish-form .form-field {
   display: flex;
   flex-direction: column;

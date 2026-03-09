@@ -1,5 +1,6 @@
 import { UserInputError } from '../errors.js';
 import { getAllPosts, getPostById, getPostsConnection, getUserByUsername, insertPost } from '../db.js';
+import { pubsub, POST_PUBLISHED } from '../pubsub.js';
 
 const MIN_TITLE_LENGTH = 1;
 const MAX_TITLE_LENGTH = 200;
@@ -36,28 +37,49 @@ function validatePublishPost(title, body, authorUsername) {
  * Resolvers for Post-related Query and Mutation (posts, post, postsConnection, publishPost).
  */
 export const postResolvers = {
-  posts(_, { limit, authorUsername, orderBy }) {
-    return getAllPosts(limit ?? undefined, authorUsername ?? undefined, orderBy ?? 'PUBLISHED_AT_DESC');
+  posts(_, { limit, authorUsername, orderBy }, context) {
+    return getAllPosts(
+      context.db,
+      limit ?? undefined,
+      authorUsername ?? undefined,
+      orderBy ?? 'PUBLISHED_AT_DESC'
+    );
   },
-  post(_, { id }) {
-    return getPostById(id) ?? null;
+  post(_, { id }, context) {
+    return getPostById(context.db, id) ?? null;
   },
-  postsConnection(_, { first, after, authorUsername, orderBy }) {
+  postsConnection(_, { first, after, authorUsername, orderBy }, context) {
     return getPostsConnection(
+      context.db,
       first ?? 10,
       after ?? undefined,
       authorUsername ?? undefined,
       orderBy ?? 'PUBLISHED_AT_DESC'
     );
   },
-  publishPost(_, { title, body, authorUsername }) {
+  publishPost(_, { title, body, authorUsername }, context) {
     const validated = validatePublishPost(title, body, authorUsername);
-    const author = getUserByUsername(validated.authorUsername);
+    const author = getUserByUsername(context.db, validated.authorUsername);
     if (!author) {
       throw UserInputError(`User not found: ${validated.authorUsername}. Create the user first with createUser.`, {
         argumentName: 'authorUsername',
       });
     }
-    return insertPost(validated.title, validated.body, Number(author.id));
+    const post = insertPost(context.db, validated.title, validated.body, Number(author.id));
+    pubsub.publish(POST_PUBLISHED, { postPublished: post });
+    return post;
+  },
+};
+
+export const subscriptionResolvers = {
+  Subscription: {
+    postPublished: {
+      subscribe: (_, __, context) => {
+        if (!context?.user?.username) {
+          throw new Error('Authentication required for postPublished subscription.');
+        }
+        return pubsub.asyncIterator(POST_PUBLISHED);
+      },
+    },
   },
 };

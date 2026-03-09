@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useQuery, useMutation } from '@apollo/client'
+import { useQuery, useMutation, useSubscription } from '@apollo/client'
 import './App.css'
 import { POSTS_PAGE_SIZE, FILTER_DEBOUNCE_MS } from './constants.js'
-import { BLOG_QUERY, CREATE_USER_MUTATION, PUBLISH_POST_MUTATION } from './operations.js'
-import { loadCurrentUser, saveCurrentUser } from './utils/user.js'
+import {
+  BLOG_QUERY,
+  LOGIN_MUTATION,
+  PUBLISH_POST_MUTATION,
+  POST_PUBLISHED_SUBSCRIPTION,
+} from './operations.js'
+import { loadCurrentUser, saveCurrentUser, setAuthToken, clearAuth } from './utils/user.js'
 import { formatDateTime } from './utils/format.js'
 import { getErrorMessage } from './utils/errors.js'
 import CurrentUserSection from './components/CurrentUserSection.jsx'
@@ -26,57 +31,68 @@ function App() {
     orderBy,
   }
 
-  const { data, loading, error: queryError, fetchMore } = useQuery(BLOG_QUERY, {
+  const [currentUser, setCurrentUserState] = useState(loadCurrentUser)
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+
+  const { data, loading, error: queryError, fetchMore, refetch } = useQuery(BLOG_QUERY, {
     variables: queryVars,
   })
-  const [createUserMutation, { error: createUserError }] = useMutation(CREATE_USER_MUTATION)
+  useSubscription(POST_PUBLISHED_SUBSCRIPTION, {
+    skip: !currentUser,
+    onData: () => refetch(),
+  })
+  const [loginMutation, { error: loginError }] = useMutation(LOGIN_MUTATION)
   const [publishPostMutation, { error: publishError }] = useMutation(PUBLISH_POST_MUTATION, {
     refetchQueries: [{ query: BLOG_QUERY, variables: queryVars }],
   })
 
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
-  const [currentUser, setCurrentUserState] = useState(loadCurrentUser)
   const [showUserForm, setShowUserForm] = useState(() => !loadCurrentUser())
   const [usernameInput, setUsernameInput] = useState('')
+  const [passwordInput, setPasswordInput] = useState('')
   const [displayNameInput, setDisplayNameInput] = useState('')
   const [mutationError, setMutationError] = useState(null)
 
   const error =
     queryError?.message ??
     (publishError ? getErrorMessage(publishError) : null) ??
-    (createUserError ? getErrorMessage(createUserError) : null) ??
+    (loginError ? getErrorMessage(loginError) : null) ??
     mutationError
   const connection = data?.postsConnection
   const posts = connection?.edges?.map((e) => e.node) ?? []
   const pageInfo = connection?.pageInfo
 
-  function handleSetCurrentUser(e) {
+  function handleLogin(e) {
     e.preventDefault()
     const username = usernameInput.trim()
-    const displayName = displayNameInput.trim()
+    const password = passwordInput
+    const displayName = displayNameInput.trim() || null
     setMutationError(null)
-    createUserMutation({ variables: { username, displayName } })
+    loginMutation({ variables: { username, password, displayName } })
       .then(({ data: res }) => {
-        const user = res.createUser
+        const { token, user } = res.login
+        setAuthToken(token)
         const u = { username: user.username, displayName: user.displayName }
         setCurrentUserState(u)
         saveCurrentUser(u)
         setShowUserForm(false)
+        setPasswordInput('')
       })
       .catch((e) => setMutationError(getErrorMessage(e)))
   }
 
   function handleRemoveUser() {
+    clearAuth()
     setCurrentUserState(null)
-    saveCurrentUser(null)
     setUsernameInput('')
+    setPasswordInput('')
     setDisplayNameInput('')
     setShowUserForm(true)
   }
 
   function handleChangeUser() {
     setUsernameInput(currentUser?.username ?? '')
+    setPasswordInput('')
     setDisplayNameInput(currentUser?.displayName ?? '')
     setShowUserForm(true)
   }
@@ -84,7 +100,7 @@ function App() {
   async function handlePublishPost(e) {
     e.preventDefault()
     if (!currentUser) {
-      setMutationError('Set a current user (username + display name) before publishing.')
+      setMutationError('Log in before publishing.')
       return
     }
     setMutationError(null)
@@ -121,10 +137,12 @@ function App() {
             currentUser={currentUser}
             showUserForm={showUserForm}
             usernameInput={usernameInput}
+            passwordInput={passwordInput}
             displayNameInput={displayNameInput}
             onUsernameChange={setUsernameInput}
+            onPasswordChange={setPasswordInput}
             onDisplayNameChange={setDisplayNameInput}
-            onSetUser={handleSetCurrentUser}
+            onLogin={handleLogin}
             onRemoveUser={handleRemoveUser}
             onChangeUser={handleChangeUser}
           />

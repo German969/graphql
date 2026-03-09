@@ -2,10 +2,12 @@ function CurrentUserSection({
   currentUser,
   showUserForm,
   usernameInput,
+  passwordInput,
   displayNameInput,
   onUsernameChange,
+  onPasswordChange,
   onDisplayNameChange,
-  onSetUser,
+  onLogin,
   onRemoveUser,
   onChangeUser,
 }) {
@@ -19,11 +21,12 @@ function CurrentUserSection({
           </p>
           <div className="current-user-actions">
             <button type="button" onClick={onChangeUser}>Change user</button>
-            <button type="button" onClick={onRemoveUser} className="btn-remove">Remove user</button>
+            <button type="button" onClick={onRemoveUser} className="btn-remove">Log out</button>
           </div>
         </>
       ) : (
-        <form onSubmit={onSetUser} className="publish-form">
+        <form onSubmit={onLogin} className="publish-form">
+          <p className="form-hint">Password must equal username (demo auth).</p>
           <div className="form-field">
             <label htmlFor="username">Username</label>
             <input
@@ -35,17 +38,27 @@ function CurrentUserSection({
             />
           </div>
           <div className="form-field">
-            <label htmlFor="display-name">Display name</label>
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={passwordInput}
+              onChange={(e) => onPasswordChange(e.target.value)}
+              placeholder="Same as username"
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="display-name">Display name (for new users)</label>
             <input
               id="display-name"
               type="text"
               value={displayNameInput}
               onChange={(e) => onDisplayNameChange(e.target.value)}
-              placeholder="Display name"
+              placeholder="Optional when existing"
             />
           </div>
           <div className="form-actions">
-            <button type="submit">Set as current user</button>
+            <button type="submit">Login</button>
           </div>
         </form>
       )}

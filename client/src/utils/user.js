@@ -1,4 +1,4 @@
-import { CURRENT_USER_KEY } from '../constants.js'
+import { CURRENT_USER_KEY, AUTH_TOKEN_KEY } from '../constants.js'
 
 export function loadCurrentUser() {
   try {
@@ -14,4 +14,18 @@ export function loadCurrentUser() {
 export function saveCurrentUser(user) {
   if (user) localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user))
   else localStorage.removeItem(CURRENT_USER_KEY)
+}
+
+export function getAuthToken() {
+  return localStorage.getItem(AUTH_TOKEN_KEY)
+}
+
+export function setAuthToken(token) {
+  if (token) localStorage.setItem(AUTH_TOKEN_KEY, token)
+  else localStorage.removeItem(AUTH_TOKEN_KEY)
+}
+
+export function clearAuth() {
+  localStorage.removeItem(AUTH_TOKEN_KEY)
+  localStorage.removeItem(CURRENT_USER_KEY)
 }

@@ -41,3 +41,8 @@ extend type Query {
 extend type Mutation {
   publishPost(title: String!, body: String!, authorUsername: String!): Post!
 }
+
+type Subscription {
+  """Emitted when a new post is published. Requires auth for this demo."""
+  postPublished: Post!
+}
