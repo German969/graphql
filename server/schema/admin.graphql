@@ -1,0 +1,13 @@
+# Admin Dashboard schema – extend in exercises
+
+extend type Query {
+  """Stats for admin dashboard. Exercise 2."""
+  adminStats: AdminStats!
+  """Paginated users list for admin. Exercise 4."""
+  adminUsers(limit: Int, usernameContains: String): [User!]!
+}
+
+type AdminStats {
+  userCount: Int!
+  postCount: Int!
+}

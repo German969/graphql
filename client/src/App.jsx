@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useSubscription } from '@apollo/client'
 import './App.css'
 import { POSTS_PAGE_SIZE, FILTER_DEBOUNCE_MS } from './constants.js'
@@ -148,6 +149,7 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>{data.blogName}</h1>
+        <nav><Link to="/admin">Admin</Link></nav>
         <p><strong>Server time:</strong> {formatDateTime(data.serverTime)}</p>
         {error && <p className="error-message">{error}</p>}
       </header>

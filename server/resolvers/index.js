@@ -1,6 +1,7 @@
 import { blogResolvers } from './blog.js';
 import { userResolvers } from './user.js';
 import { postResolvers, postTypeResolvers, subscriptionResolvers } from './post.js';
+import { adminResolvers } from './admin.js';
 
 /**
  * Apollo Server expects resolvers by type (Query, Mutation, Subscription).
@@ -9,6 +10,8 @@ import { postResolvers, postTypeResolvers, subscriptionResolvers } from './post.
 export const resolvers = {
   Query: {
     ...blogResolvers,
+    adminStats: adminResolvers.adminStats,
+    adminUsers: adminResolvers.adminUsers,
     user: userResolvers.user,
     me: userResolvers.me,
     posts: postResolvers.posts,

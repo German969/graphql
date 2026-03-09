@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "test:exercises": "playwright test",
+    "test:exercises:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}

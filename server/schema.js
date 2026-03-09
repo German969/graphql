@@ -6,7 +6,7 @@ import { buildSchema } from 'graphql';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const schemaDir = join(__dirname, 'schema');
 
-const schemaFiles = ['base.graphql', 'user.graphql', 'post.graphql'];
+const schemaFiles = ['base.graphql', 'user.graphql', 'post.graphql', 'admin.graphql'];
 const typeDefs = schemaFiles
   .map((file) => readFileSync(join(schemaDir, file), 'utf-8'))
   .join('\n');
